@@ -49,7 +49,7 @@ export default function Sidebar({ routes }: SidebarProps) {
           open ? "translate-x-0" : "-translate-x-72 md:translate-x-0"
         )}
       >
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-2 font-bold">
           {routes.map(
             (route) =>
               route.show !== false && (

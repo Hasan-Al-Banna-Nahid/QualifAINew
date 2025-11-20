@@ -15,7 +15,7 @@ const Navbar = () => {
   return (
     <nav
       className={clsx(
-        "w-full shadow-md transition-colors",
+        "w-full shadow-md transition-colors font-bold",
         theme === "light"
           ? "bg-white text-gray-900"
           : "bg-slate-900 text-blue-300"
