@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Quicksand } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider } from "../context/ThemeContext";
 
-import Navbar from "./component/Navbar/Navbar";
-import Sidebar from "./component/Sidebar/Sidebar";
-import { routes } from "./component/Navbar/Routes";
-import { sidebarRoutes } from "./component/Sidebar/Routes";
+import Navbar from "../component/Navbar/Navbar";
+import Sidebar from "../component/Sidebar/Sidebar";
+import { routes } from "../component/Navbar/Routes";
+import { sidebarRoutes } from "../component/Sidebar/Routes";
 import { Suspense } from "react";
 import Loading from "./loading";
 
