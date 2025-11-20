@@ -7,6 +7,7 @@ import { IoPieChartOutline } from "react-icons/io5";
 import clsx from "clsx";
 import { useTheme } from "@/app/context/ThemeContext";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
+import { usePathname } from "next/navigation"; // <--- import this
 
 interface Route {
   name: string;
@@ -22,14 +23,9 @@ const Navbar = ({ routes }: NavbarProps) => {
   const [notifications, setNotifications] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme } = useTheme();
+  const pathname = usePathname(); // <--- get current path
 
-  const handleProfileClick = () => {
-    alert("Profile clicked!");
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
   return (
     <nav
@@ -57,8 +53,12 @@ const Navbar = ({ routes }: NavbarProps) => {
                     key={route.name}
                     href={route.href}
                     className={clsx(
-                      "transition-colors hover:text-blue-800",
-                      theme === "light" ? "text-gray-700" : "text-gray-100"
+                      "transition-colors",
+                      pathname === route.href
+                        ? "text-blue-600 font-semibold" // <--- active route
+                        : theme === "light"
+                        ? "text-gray-700 hover:text-blue-800"
+                        : "text-gray-100 hover:text-blue-400"
                     )}
                   >
                     {route.name}
@@ -88,7 +88,6 @@ const Navbar = ({ routes }: NavbarProps) => {
 
             {/* Profile */}
             <button
-              onClick={handleProfileClick}
               className={clsx(
                 "w-10 h-10 rounded-full flex items-center justify-center",
                 theme === "light"
@@ -135,13 +134,15 @@ const Navbar = ({ routes }: NavbarProps) => {
                 <Link
                   key={route.name}
                   href={route.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   className={clsx(
-                    "block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-gray-200 dark:hover:bg-gray-800",
-                    theme === "light"
+                    "block px-3 py-2 rounded-md text-base font-medium transition-colors",
+                    pathname === route.href
+                      ? "text-blue-600 font-semibold"
+                      : theme === "light"
                       ? "hover:text-blue-800"
                       : "hover:text-blue-400"
                   )}
-                  onClick={() => setMobileMenuOpen(false)}
                 >
                   {route.name}
                 </Link>
