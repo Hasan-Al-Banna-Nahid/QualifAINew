@@ -11,7 +11,6 @@ import {
   Settings,
   User as UserIcon,
   Shield,
-  Crown,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -26,31 +25,7 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
   const { theme } = useTheme();
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isGlowing, setIsGlowing] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isDimming, setIsDimming] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Auto expand/collapse effect every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsExpanded((prev) => !prev);
-      // Start dimming effect after expansion
-      setTimeout(() => setIsDimming(true), 100);
-      setTimeout(() => setIsDimming(false), 600);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Pulsing glow effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsGlowing((prev) => !prev);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,128 +57,92 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
       .slice(0, 2);
   };
 
+  // Cartoon avatar component
+  const CartoonAvatar = () => (
+    <div className="relative">
+      {/* Face */}
+      <div
+        className={clsx(
+          "w-8 h-8 rounded-full relative overflow-hidden border-2",
+          theme === "light"
+            ? "bg-blue-500 border-blue-600"
+            : "bg-blue-600 border-blue-500"
+        )}
+      >
+        {/* Eyes */}
+        <div className="absolute top-2 left-2 flex gap-2">
+          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+        </div>
+        {/* Smile */}
+        <div className="absolute bottom-2 left-3 w-4 h-1 bg-white rounded-full"></div>
+      </div>
+      {/* Sparkle effect */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+        className="absolute -top-1 -right-1"
+      >
+        <Sparkles className="w-2 h-2 text-yellow-400" />
+      </motion.div>
+    </div>
+  );
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Compact Profile Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          "flex items-center gap-2 p-1.5 rounded-2xl transition-all duration-500 relative overflow-hidden group border-2",
+          "flex items-center gap-2 p-1.5 rounded-2xl transition-all duration-300 relative overflow-hidden group border",
           isAuthenticated
             ? clsx(
-                "border-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-border",
                 theme === "light"
-                  ? "shadow-lg shadow-purple-500/25"
-                  : "shadow-lg shadow-cyan-500/25"
+                  ? "bg-white border-gray-300 hover:bg-gray-50 text-gray-700 shadow-sm"
+                  : "bg-slate-800 border-slate-600 hover:bg-slate-700 text-white"
               )
-            : "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+            : clsx(
+                theme === "light"
+                  ? "bg-blue-500 text-white border-blue-600 hover:bg-blue-600"
+                  : "bg-blue-600 text-white border-blue-500 hover:bg-blue-700"
+              )
         )}
       >
         {isAuthenticated ? (
           <>
-            {/* Enhanced Gradient Background */}
-            <motion.div
-              animate={{
-                opacity: isGlowing ? [0.4, 0.8, 0.4] : 0.4,
-                scale: isGlowing ? [1, 1.1, 1] : 1,
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500"
-            />
-
-            {/* Dimming Overlay Effect */}
-            <motion.div
-              animate={{
-                opacity: isDimming ? 0.3 : 0,
-              }}
-              transition={{
-                duration: 0.5,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-0 rounded-2xl bg-white/30 backdrop-blur-sm"
-            />
-
             {/* Content */}
             <div className="relative z-10 flex items-center gap-2">
-              {/* Compact User Avatar */}
+              {/* Cartoon Avatar */}
               <motion.div
-                animate={{
-                  scale: isExpanded ? 1.1 : 1,
-                }}
-                transition={{
-                  duration: 0.3,
-                  ease: "backOut",
-                }}
-                className={clsx(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 relative overflow-hidden",
-                  "bg-gradient-to-br from-cyan-400 to-purple-500 text-white border-white/30"
-                )}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="relative"
               >
-                {/* Inner shine effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent rounded-full" />
-
-                {/* User initials */}
-                <span className="relative z-10 font-bold drop-shadow-sm">
-                  {getUserInitials()}
-                </span>
-
-                {/* Animated Sparkle */}
-                <motion.div
-                  animate={{
-                    rotate: 360,
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="absolute -top-0.5 -right-0.5"
-                >
-                  <Sparkles className="w-2 h-2 text-yellow-300" />
-                </motion.div>
+                <CartoonAvatar />
               </motion.div>
 
-              {/* Expandable User Info */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="hidden sm:block overflow-hidden"
+              {/* User Info - Always visible in compact form */}
+              <div className="hidden sm:block text-left">
+                <div className="text-left">
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={clsx(
+                        "text-xs font-bold truncate max-w-[80px]",
+                        theme === "light" ? "text-gray-800" : "text-white"
+                      )}
+                    >
+                      {user?.name?.split(" ")[0] || "User"}
+                    </span>
+                  </div>
+                  <div
+                    className={clsx(
+                      "text-[10px] font-medium truncate max-w-[80px]",
+                      theme === "light" ? "text-gray-600" : "text-gray-300"
+                    )}
                   >
-                    <div className="text-left min-w-[120px]">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent truncate">
-                          {user?.name?.split(" ")[0] || "User"}
-                        </span>
-                        <motion.div
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Crown className="w-2.5 h-2.5 text-yellow-300" />
-                        </motion.div>
-                      </div>
-                      <div
-                        className={clsx(
-                          "text-[10px] font-medium truncate",
-                          theme === "light"
-                            ? "text-cyan-700/80"
-                            : "text-cyan-300/80"
-                        )}
-                      >
-                        {user?.email?.split("@")[0] || "Welcome!"}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {user?.email?.split("@")[0] || "Welcome!"}
+                  </div>
+                </div>
+              </div>
 
               {/* Animated Chevron */}
               <motion.div
@@ -214,7 +153,7 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                 transition={{ duration: 0.3 }}
                 className={clsx(
                   "w-3 h-3 transition-colors",
-                  theme === "light" ? "text-cyan-600" : "text-cyan-300"
+                  theme === "light" ? "text-gray-600" : "text-gray-300"
                 )}
               >
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +170,12 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
         ) : (
           /* Compact Not Authenticated State */
           <>
-            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-white/20">
+            <div
+              className={clsx(
+                "w-6 h-6 rounded-full flex items-center justify-center",
+                theme === "light" ? "bg-white/20" : "bg-white/10"
+              )}
+            >
               <Shield className="w-3 h-3" />
             </div>
             <div className="hidden sm:block text-left">
@@ -249,59 +193,70 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className={clsx(
-              "absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 z-50 border backdrop-blur-xl",
+              "absolute right-0 mt-2 w-56 rounded-xl shadow-xl py-2 z-50 border backdrop-blur-lg",
               theme === "light"
-                ? "bg-gradient-to-br from-white/95 to-cyan-50/95 border-cyan-200/60 text-gray-900 shadow-cyan-500/20"
-                : "bg-gradient-to-br from-slate-900/95 to-purple-900/95 border-cyan-500/30 text-cyan-100 shadow-cyan-500/10"
+                ? "bg-white border-gray-200 text-gray-900 shadow-gray-200"
+                : "bg-slate-800 border-slate-600 text-white shadow-slate-900"
             )}
           >
             {isAuthenticated ? (
               <>
-                {/* Enhanced User Header */}
+                {/* User Header */}
                 <div
                   className={clsx(
-                    "px-3 py-3 border-b relative overflow-hidden rounded-t-2xl",
+                    "px-3 py-3 border-b",
                     theme === "light"
-                      ? "border-cyan-200 bg-gradient-to-r from-cyan-400/10 to-purple-400/10"
-                      : "border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10"
+                      ? "border-gray-200 bg-gray-50"
+                      : "border-slate-600 bg-slate-700"
                   )}
                 >
-                  {/* Animated background gradient */}
-                  <motion.div
-                    animate={{
-                      opacity: [0.3, 0.6, 0.3],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-pink-400/20"
-                  />
-
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className={clsx(
-                          "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 relative overflow-hidden",
-                          "bg-gradient-to-br from-cyan-400 to-purple-500 text-white border-white/30"
-                        )}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-full" />
-                        <span className="relative z-10 drop-shadow-sm">
-                          {getUserInitials()}
-                        </span>
+                      {/* Larger Cartoon Avatar in dropdown */}
+                      <div className="relative">
+                        <div
+                          className={clsx(
+                            "w-12 h-12 rounded-full relative overflow-hidden border-2",
+                            theme === "light"
+                              ? "bg-blue-500 border-blue-600"
+                              : "bg-blue-600 border-blue-500"
+                          )}
+                        >
+                          {/* Eyes */}
+                          <div className="absolute top-3 left-3 flex gap-3">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                          {/* Smile */}
+                          <div className="absolute bottom-3 left-4 w-6 h-1.5 bg-white rounded-full"></div>
+                        </div>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                          className="absolute -top-1 -right-1"
+                        >
+                          <Sparkles className="w-3 h-3 text-yellow-400" />
+                        </motion.div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-sm truncate bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                        <h3
+                          className={clsx(
+                            "font-bold text-sm truncate",
+                            theme === "light" ? "text-gray-900" : "text-white"
+                          )}
+                        >
                           {user?.name || "User"}
                         </h3>
                         <p
                           className={clsx(
                             "text-xs truncate mt-0.5",
                             theme === "light"
-                              ? "text-cyan-600/80"
-                              : "text-cyan-300/80"
+                              ? "text-gray-600"
+                              : "text-gray-300"
                           )}
                         >
                           {user?.email}
@@ -309,20 +264,16 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                       </div>
                     </div>
 
-                    {/* Enhanced Status Badge */}
+                    {/* Status Badge */}
                     <div className="flex items-center gap-2">
-                      <motion.div
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="w-1.5 h-1.5 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"
-                      />
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
                       <span
                         className={clsx(
-                          "text-xs font-bold",
-                          theme === "light" ? "text-cyan-600" : "text-cyan-400"
+                          "text-xs font-medium",
+                          theme === "light" ? "text-gray-600" : "text-gray-300"
                         )}
                       >
-                        Premium Member
+                        Active Now
                       </span>
                     </div>
                   </div>
@@ -342,17 +293,13 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                       transition={{ delay: index * 0.1 }}
                       whileHover={{
                         scale: 1.02,
-                        x: 5,
-                        background:
-                          theme === "light"
-                            ? "linear-gradient(90deg, #22d3ee, #a855f7)"
-                            : "linear-gradient(90deg, #155e75, #7e22ce)",
+                        x: 2,
                       }}
                       className={clsx(
-                        "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-300 w-full rounded-xl group",
+                        "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-200 w-full rounded-lg group",
                         theme === "light"
-                          ? "text-gray-700 hover:text-white"
-                          : "text-cyan-200 hover:text-white"
+                          ? "text-gray-700 hover:bg-gray-100"
+                          : "text-gray-200 hover:bg-slate-700"
                       )}
                       onClick={() => setIsOpen(false)}
                     >
@@ -368,15 +315,14 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                     transition={{ delay: 0.3 }}
                     whileHover={{
                       scale: 1.02,
-                      x: 5,
-                      background: "linear-gradient(90deg, #ef4444, #dc2626)",
+                      x: 2,
                     }}
                     onClick={handleLogout}
                     className={clsx(
-                      "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-300 w-full rounded-xl border-t mt-1 pt-2 group",
+                      "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-200 w-full rounded-lg border-t mt-1 pt-2 group",
                       theme === "light"
-                        ? "text-gray-700 hover:text-white border-cyan-200"
-                        : "text-cyan-200 hover:text-white border-cyan-500/20"
+                        ? "text-red-600 hover:bg-red-50 border-gray-200"
+                        : "text-red-400 hover:bg-red-900/20 border-slate-600"
                     )}
                   >
                     <LogOut className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
@@ -385,18 +331,28 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                 </div>
               </>
             ) : (
-              /* Compact Login Dropdown */
+              /* Login Dropdown */
               <>
-                <div className="px-3 py-3 border-b border-cyan-200 dark:border-cyan-500/20">
-                  <h3 className="font-semibold text-sm bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                <div
+                  className={clsx(
+                    "px-3 py-3 border-b",
+                    theme === "light"
+                      ? "border-gray-200 bg-gray-50"
+                      : "border-slate-600 bg-slate-700"
+                  )}
+                >
+                  <h3
+                    className={clsx(
+                      "font-semibold text-sm",
+                      theme === "light" ? "text-gray-900" : "text-white"
+                    )}
+                  >
                     Welcome to QualifAI
                   </h3>
                   <p
                     className={clsx(
                       "text-xs mt-0.5",
-                      theme === "light"
-                        ? "text-cyan-600/80"
-                        : "text-cyan-400/70"
+                      theme === "light" ? "text-gray-600" : "text-gray-300"
                     )}
                   >
                     Join thousands of agencies
@@ -409,13 +365,11 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                       icon: LogIn,
                       label: "Sign In",
                       href: "/login",
-                      color: "blue",
                     },
                     {
                       icon: User,
                       label: "Create Account",
                       href: "/register",
-                      color: "green",
                     },
                   ].map((item, index) => (
                     <motion.a
@@ -425,18 +379,14 @@ export default function Profile({ isAuthenticated, user }: ProfileProps) {
                       transition={{ delay: index * 0.1 }}
                       whileHover={{
                         scale: 1.02,
-                        x: 5,
-                        background:
-                          item.color === "blue"
-                            ? "linear-gradient(90deg, #3b82f6, #1d4ed8)"
-                            : "linear-gradient(90deg, #10b981, #047857)",
+                        x: 2,
                       }}
                       href={item.href}
                       className={clsx(
-                        "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-300 rounded-xl group",
+                        "flex items-center gap-2 px-2.5 py-2 text-xs transition-all duration-200 rounded-lg group",
                         theme === "light"
-                          ? "text-gray-700 hover:text-white"
-                          : "text-cyan-200 hover:text-white"
+                          ? "text-gray-700 hover:bg-gray-100"
+                          : "text-gray-200 hover:bg-slate-700"
                       )}
                       onClick={() => setIsOpen(false)}
                     >

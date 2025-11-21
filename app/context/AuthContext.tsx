@@ -1,6 +1,6 @@
-// app/context/AuthContext.tsx (Updated)
+// app/context/AuthContext.tsx (FIXED)
 "use client";
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   useCurrentUser,
@@ -39,6 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   } = useCurrentUser();
   const { intendedRoute, clearIntendedRoute } = useAuthRoute();
 
+  const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
+
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const logoutMutation = useLogout();
@@ -54,25 +56,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (userError) {
       console.warn("User loading error (might be offline):", userError);
-      // Don't show toast for offline errors to avoid annoying users
     }
   }, [userError]);
 
-  // Handle successful authentication
+  // FIXED: Only redirect after successful login, not on every page load
   useEffect(() => {
-    if (user && !userLoading && !authActionLoading) {
-      // Redirect to intended route or dashboard
-      const redirectPath = intendedRoute || "/";
+    if (
+      loginMutation.isSuccess &&
+      user &&
+      !authActionLoading &&
+      hasJustLoggedIn
+    ) {
+      const redirectPath = intendedRoute || "/dashboard"; // Redirect to dashboard instead of home
       clearIntendedRoute();
+      setHasJustLoggedIn(false);
 
-      // Use setTimeout to ensure toast is visible before redirect
       setTimeout(() => {
         router.push(redirectPath);
       }, 1000);
     }
   }, [
+    loginMutation.isSuccess,
     user,
-    userLoading,
+    authActionLoading,
+    intendedRoute,
+    clearIntendedRoute,
+    router,
+    hasJustLoggedIn,
+  ]);
+
+  // FIXED: Only redirect after Google sign in
+  useEffect(() => {
+    if (googleSignInMutation.isSuccess && user && !authActionLoading) {
+      const redirectPath = intendedRoute || "/dashboard"; // Redirect to dashboard instead of home
+      clearIntendedRoute();
+
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 1000);
+    }
+  }, [
+    googleSignInMutation.isSuccess,
+    user,
     authActionLoading,
     intendedRoute,
     clearIntendedRoute,
@@ -82,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle registration success
   useEffect(() => {
     if (registerMutation.isSuccess && !registerMutation.isPending) {
-      // Clear any previous errors and redirect to login
       setTimeout(() => {
         router.push("/login");
       }, 1500);
@@ -92,20 +116,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle errors
   useEffect(() => {
     if (loginMutation.error) {
+      // Handle login error
     }
 
     if (registerMutation.error) {
+      // Handle register error
     }
 
     if (googleSignInMutation.error) {
+      // Handle Google sign in error
     }
   }, [loginMutation.error, registerMutation.error, googleSignInMutation.error]);
 
   const login = async (data: LoginFormData) => {
+    setHasJustLoggedIn(true); // Mark that user just logged in
     try {
       await loginMutation.mutateAsync(data);
     } catch (error) {
-      // Error handled in useEffect
+      setHasJustLoggedIn(false); // Reset if login fails
     }
   };
 
@@ -124,7 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await logoutMutation.mutateAsync();
-    } catch (error: any) {}
+    } catch (error: any) {
+      // Handle logout error
+    }
   };
 
   const signInWithGoogle = async () => {

@@ -37,6 +37,9 @@ export interface AuthResponse {
 }
 
 class FirebaseAuthService {
+  resetPassword(email: string): Promise<unknown> {
+    throw new Error("Method not implemented.");
+  }
   private userCache = new Map<string, User>();
 
   // Email/Password Registration

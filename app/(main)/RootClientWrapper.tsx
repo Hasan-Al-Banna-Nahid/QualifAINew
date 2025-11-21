@@ -8,6 +8,7 @@ import Navbar from "@/app/components/Navbar/Navbar";
 import { routes } from "@/app/components/Navbar/Routes";
 import ClientLayout from "./clientWrapper";
 import FirebaseAuthListener from "../components/Auth/FirebaseAuthListener";
+import ScrollToTop from "../components/Scroll/ScrollToTop";
 
 interface RootClientWrapperProps {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ export default function RootClientWrapper({
             <FirebaseAuthListener />
 
             <Navbar routes={routes} />
+            <ScrollToTop />
+
             <ClientLayout sidebarRoutes={sidebarRoutes}>
               <main className="min-h-screen pt-16">{children}</main>
             </ClientLayout>

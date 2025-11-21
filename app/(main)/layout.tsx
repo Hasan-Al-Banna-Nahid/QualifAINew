@@ -12,6 +12,7 @@ import { LayoutProvider } from "../context/LayoutContext";
 import { AuthRouteProvider } from "@/app/context/AuthRouteContext";
 import TanstackQueryProvider from "./providers/TanstackQueryProvider";
 import FirebaseAuthListener from "@/app/components/Auth/FirebaseAuthListener";
+import { ScrollProvider } from "../context/ScrollContext";
 
 const font = Quicksand({
   subsets: ["latin", "vietnamese"],
