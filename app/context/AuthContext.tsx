@@ -1,121 +1,58 @@
+// app/context/AuthContext.tsx
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
+import React, { createContext, useContext, useEffect } from "react";
+import {
+  useCurrentUser,
+  useLogin,
+  useLogout,
+  useRegister,
+} from "@/app/(main)/lib/hooks/useAuth";
+import { User } from "@/app/(main)/lib/services/auth-service";
+import {
+  LoginFormData,
+  RegisterFormData,
+} from "@/app/(main)/lib/validations/auth";
 
 interface AuthContextType {
-  isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  login: (data: LoginFormData) => Promise<void>;
+  register: (data: RegisterFormData) => Promise<void>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: user, isLoading } = useCurrentUser();
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const logoutMutation = useLogout();
 
-  useEffect(() => {
-    // Check for existing auth token on mount
-    const token = localStorage.getItem("auth_token");
-    const userData = localStorage.getItem("user_data");
-
-    if (token && userData) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
-    }
-
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock successful login
-      const mockUser: User = {
-        id: "1",
-        name: "John Doe",
-        email: email,
-      };
-
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      localStorage.setItem("auth_token", "mock_jwt_token");
-      localStorage.setItem("user_data", JSON.stringify(mockUser));
-    } catch (error) {
-      throw new Error("Login failed");
-    } finally {
-      setIsLoading(false);
-    }
+  const login = async (data: LoginFormData) => {
+    await loginMutation.mutateAsync(data);
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock successful registration
-      const mockUser: User = {
-        id: "1",
-        name,
-        email,
-      };
-
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      localStorage.setItem("auth_token", "mock_jwt_token");
-      localStorage.setItem("user_data", JSON.stringify(mockUser));
-    } catch (error) {
-      throw new Error("Registration failed");
-    } finally {
-      setIsLoading(false);
-    }
+  const register = async (data: RegisterFormData) => {
+    await registerMutation.mutateAsync(data);
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setUser(null);
-      setIsAuthenticated(false);
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_data");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await logoutMutation.mutateAsync();
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        user,
-        isLoading,
-        login,
-        logout,
-        register,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user: user || null,
+    isLoading:
+      isLoading || loginMutation.isPending || registerMutation.isPending,
+    isAuthenticated: !!user,
+    login,
+    register,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

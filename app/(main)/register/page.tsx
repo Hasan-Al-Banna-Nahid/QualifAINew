@@ -1,12 +1,18 @@
-import Navbar from "@/app/components/Navbar/Navbar";
-import { routes } from "@/app/components/Navbar/Routes"; // Import routes
+// app/register/page.tsx
+"use client";
+import RegisterForm from "@/app/components/Auth/RegisterForm";
+import AuthLayout from "@/app/components/Auth/AuthLayout";
+import PublicRoute from "@/app/components/Auth/PublicRoute";
+import BackButton from "@/app/components/ui/Button/BackButton";
 
-const Page = () => {
+export default function RegisterPage() {
   return (
-    <div>
-      <h2>register</h2>
-    </div>
-  );
-};
+    <PublicRoute>
+      <AuthLayout type="register">
+        <BackButton className="mb-6" />
 
-export default Page;
+        <RegisterForm />
+      </AuthLayout>
+    </PublicRoute>
+  );
+}
