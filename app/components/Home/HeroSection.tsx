@@ -21,7 +21,7 @@ import clsx from "clsx";
 import { useTheme } from "@/app/context/ThemeContext";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { useScrollAnimation } from "@/app/hooks/useScrollAnimation";
+import { useScrollAnimation } from "@/app/(main)/hooks/useScrollAnimation";
 import { GlowCard } from "@/app/components/ui/glow-card";
 import { ScrollReveal } from "@/app/components/ui/scroll-reveal";
 import { DemoModal } from "@/app/components/ui/modal";
