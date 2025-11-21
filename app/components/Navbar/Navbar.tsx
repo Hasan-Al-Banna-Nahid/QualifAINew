@@ -1,5 +1,5 @@
 "use client";
-import ThemeButton from "@/app/ui/Button/ThemeButton";
+import ThemeButton from "@/app/components/ui/Button/ThemeButton";
 import clsx from "clsx";
 import { useTheme } from "@/app/context/ThemeContext";
 import MobileMenu from "./MobileMenu";
@@ -49,7 +49,7 @@ const Navbar = ({ routes }: NavbarProps) => {
             <Profile />
 
             {/* Mobile menu button */}
-            <MobileMenuButton />
+            {/* <MobileMenuButton /> */}
           </div>
         </div>
       </div>

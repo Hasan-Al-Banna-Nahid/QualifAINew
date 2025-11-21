@@ -3,12 +3,13 @@ import { Quicksand } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../context/ThemeContext";
 
-import Navbar from "../component/Navbar/Navbar";
-import Sidebar from "../component/Sidebar/Sidebar";
-import { routes } from "../component/Navbar/Routes";
-import { sidebarRoutes } from "../component/Sidebar/Routes";
+import Navbar from "../components/Navbar/Navbar";
+import Sidebar from "../components/Sidebar/Sidebar";
+import { routes } from "../components/Navbar/Routes";
+import { sidebarRoutes } from "../components/Sidebar/Routes";
 import { Suspense } from "react";
 import Loading from "./loading";
+import ClientLayout from "./clientWrapper";
 
 const font = Quicksand({
   subsets: ["latin", "vietnamese"],
@@ -30,12 +31,9 @@ export default function RootLayout({
       <body className={`${font.className} antialiased`}>
         <ThemeProvider>
           <Navbar routes={routes} />
-          <div className="flex">
-            <Sidebar routes={sidebarRoutes} />
-            <main className="flex-1 relative ml-0 md:ml-64 p-4">
-              <Suspense fallback={<Loading />}>{children}</Suspense>
-            </main>
-          </div>
+          <ClientLayout sidebarRoutes={sidebarRoutes}>
+            {children}
+          </ClientLayout>{" "}
         </ThemeProvider>
       </body>
     </html>
