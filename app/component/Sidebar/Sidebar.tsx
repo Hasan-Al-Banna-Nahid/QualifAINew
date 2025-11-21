@@ -15,27 +15,25 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ routes }: SidebarProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true); // default open
 
   return (
-    <>
+    <SidebarContainer open={open}>
+      <div className="flex flex-col space-y-2">
+        {routes.map(
+          (route) =>
+            route.show !== false && (
+              <SidebarItem
+                key={route.href}
+                name={route.name}
+                href={route.href}
+                icon={route.icon}
+                open={open}
+              />
+            )
+        )}
+      </div>
       <SidebarToggle open={open} setOpen={setOpen} />
-
-      <SidebarContainer open={open}>
-        <div className="flex flex-col space-y-2 font-bold">
-          {routes.map(
-            (route) =>
-              route.show !== false && (
-                <SidebarItem
-                  key={route.href}
-                  name={route.name}
-                  href={route.href}
-                  icon={route.icon}
-                />
-              )
-          )}
-        </div>
-      </SidebarContainer>
-    </>
+    </SidebarContainer>
   );
 }

@@ -18,14 +18,18 @@ export default function SidebarContainer({
   return (
     <aside
       className={clsx(
-        "fixed top-0 left-0 h-full w-64 flex flex-col pt-20 px-4 border-r transition-all duration-300 z-40",
+        "fixed top-0 left-0 h-full flex flex-col justify-between pt-20 border-r transition-all duration-300 z-40",
         isDark
           ? "bg-slate-900 border-slate-700 text-gray-200"
           : "bg-white border-gray-200 text-gray-900",
-        open ? "translate-x-0" : "-translate-x-72 md:translate-x-0"
+        open
+          ? "w-64 translate-x-0"
+          : "w-20 -translate-x-64 md:translate-x-0 md:w-20",
+        "overflow-hidden"
       )}
     >
-      {children}
+      {/* Links at top */}
+      <div className="flex flex-col space-y-2 px-2">{children}</div>
     </aside>
   );
 }
