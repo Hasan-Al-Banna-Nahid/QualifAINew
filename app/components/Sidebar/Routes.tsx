@@ -2,6 +2,8 @@ import {
   IoHomeOutline,
   IoSettingsOutline,
   IoLaptopOutline,
+  IoPeopleOutline,
+  IoShieldCheckmarkOutline,
 } from "react-icons/io5";
 
 import { ReactNode } from "react";
@@ -12,6 +14,7 @@ export type ISidebarType = {
   href: string;
   icon: ReactNode;
   show?: boolean;
+  requiresAuth?: boolean;
   element?: ReactNode;
 };
 
@@ -21,8 +24,31 @@ export const sidebarRoutes: ISidebarType[] = [
     href: "/",
     icon: <IoHomeOutline />,
     element: <HomePage />,
+    requiresAuth: false,
   },
-  { name: "Dashboard", href: "/dashboard", icon: <IoLaptopOutline /> },
-  { name: "Settings", href: "/settings", icon: <IoSettingsOutline /> },
-  { name: "Admin", href: "/admin", icon: <IoSettingsOutline />, show: false },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: <IoLaptopOutline />,
+    requiresAuth: true,
+  },
+  {
+    name: "Clients",
+    href: "/clients",
+    icon: <IoPeopleOutline />,
+    requiresAuth: true,
+  },
+  {
+    name: "Settings",
+    href: "/settings",
+    icon: <IoSettingsOutline />,
+    requiresAuth: true,
+  },
+  {
+    name: "Admin",
+    href: "/admin",
+    icon: <IoShieldCheckmarkOutline />,
+    show: false,
+    requiresAuth: true,
+  },
 ];

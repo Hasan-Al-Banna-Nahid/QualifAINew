@@ -1,7 +1,12 @@
-import React from "react";
+import Navbar from "@/app/components/Navbar/Navbar";
+import { routes } from "@/app/components/Navbar/Routes"; // Import routes
 
-const page = () => {
-  return <div>Login</div>;
+const Page = () => {
+  return (
+    <div>
+      <h2>Login</h2>
+    </div>
+  );
 };
 
-export default page;
+export default Page;
