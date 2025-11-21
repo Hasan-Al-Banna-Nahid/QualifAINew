@@ -9,14 +9,14 @@ import clsx from "clsx";
 interface BackButtonProps {
   className?: string;
   label?: string;
-  href: string;
+  //   href: string;
 }
 
 export default function BackButton({
   className = "",
   label = "Back",
-  href = "/",
-}: BackButtonProps) {
+}: //   href = "/",
+BackButtonProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -26,7 +26,7 @@ export default function BackButton({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      onClick={() => router.push(href)}
+      onClick={() => router.back()}
       className={clsx(
         "flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 group relative overflow-hidden",
         isDark

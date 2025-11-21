@@ -9,7 +9,7 @@ export default function RegisterPage() {
   return (
     <PublicRoute>
       <AuthLayout type="register">
-        <BackButton className="mb-6" href={""} />
+        {/* <BackButton className="mb-6" /> */}
 
         <RegisterForm />
       </AuthLayout>
