@@ -1,3 +1,4 @@
+// app/components/Navbar/Navbar.tsx
 "use client";
 import ThemeButton from "@/app/components/ui/Button/ThemeButton";
 import clsx from "clsx";
@@ -27,15 +28,11 @@ const Navbar = ({ routes }: NavbarProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const pathname = usePathname();
 
-  // Filter routes based on authentication
+  // Filter routes based on authentication - only show routes that don't require auth or when authenticated
   const filteredRoutes = routes.filter((route) => {
     if (route.requiresAuth && !isAuthenticated) return false;
     return route.show !== false;
   });
-
-  // Define auth pages where navbar should show minimal version
-  const authPages = ["/login", "/register", "/auth"];
-  const isAuthPage = authPages.some((page) => pathname.startsWith(page));
 
   // Show loading state
   if (isLoading) {
@@ -55,6 +52,7 @@ const Navbar = ({ routes }: NavbarProps) => {
             </Link>
             <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 w-20 rounded"></div>
             <div className="flex items-center space-x-4">
+              <ThemeButton />
               <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded-full"></div>
             </div>
           </div>
@@ -63,35 +61,6 @@ const Navbar = ({ routes }: NavbarProps) => {
     );
   }
 
-  // Show minimal navbar on auth pages for non-authenticated users
-  if (!isAuthenticated && isAuthPage) {
-    return (
-      <nav
-        className={clsx(
-          "w-full fixed shadow-md transition-colors font-bold z-50",
-          theme === "light"
-            ? "bg-white/80 backdrop-blur-sm text-gray-900"
-            : "bg-slate-900/80 backdrop-blur-sm text-blue-300"
-        )}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            {/* Left - Logo */}
-            <Link href="/">
-              <Logo />
-            </Link>
-
-            {/* Right - Only theme button on auth pages */}
-            <div className="flex items-center space-x-4">
-              <ThemeButton />
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
-  // Full navbar for authenticated users or non-auth pages
   return (
     <nav
       className={clsx(
@@ -103,7 +72,7 @@ const Navbar = ({ routes }: NavbarProps) => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Left - Logo */}
+          {/* Left - Logo (Always visible) */}
           <Link href="/">
             <Logo />
           </Link>
@@ -111,14 +80,15 @@ const Navbar = ({ routes }: NavbarProps) => {
           {/* Middle - Routes (Desktop) - Only show if authenticated */}
           {isAuthenticated && <Desktop routes={filteredRoutes} />}
 
-          {/* Right - Theme + Notifications + Profile */}
+          {/* Right - Theme + Profile (Always visible) */}
           <div className="flex items-center space-x-4">
+            {/* Theme Button (Always visible) */}
             <ThemeButton />
 
             {/* Notifications - Only show if authenticated */}
             {isAuthenticated && <Notifications />}
 
-            {/* Profile with auth status */}
+            {/* Profile with auth status (Always visible, shows login dropdown when not authenticated) */}
             <Profile isAuthenticated={isAuthenticated} user={user} />
 
             {/* Mobile menu button - Only show if authenticated */}

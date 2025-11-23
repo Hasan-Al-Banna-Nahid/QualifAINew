@@ -1,4 +1,4 @@
-// app/clientWrapper.tsx
+// app/clientWrapper.tsx (Updated)
 "use client";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLayout } from "@/app/context/LayoutContext";
@@ -20,22 +20,22 @@ export default function ClientLayout({
   // Initialize sidebar state based on authentication
   useEffect(() => {
     if (isAuthenticated) {
-      setSidebarOpen(true); // Default to open when authenticated
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
     }
   }, [isAuthenticated, setSidebarOpen]);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
       {/* Sidebar - Only show when authenticated */}
       {isAuthenticated && <Sidebar routes={sidebarRoutes} />}
 
-      {/* Main Content - Dynamic width based on sidebar */}
+      {/* Main Content */}
       <div
         className={`
-        flex-1 transition-all duration-300 min-h-screen
-        ${
-          isAuthenticated ? "lg:ml-64" : "ml-0"
-        } /* Adjust margin based on sidebar */
+        flex-1 transition-all duration-300 w-full
+        ${isAuthenticated ? "lg:ml-64" : "ml-0"}
       `}
       >
         {children}

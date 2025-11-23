@@ -19,16 +19,16 @@ export type ISidebarType = {
 };
 
 export const sidebarRoutes: ISidebarType[] = [
-  {
-    name: "Home",
-    href: "/",
-    icon: <IoHomeOutline />,
-    element: <HomePage />,
-    requiresAuth: false,
-  },
+  // {
+  //   name: "Home",
+  //   href: "/",
+  //   icon: <IoHomeOutline />,
+  //   element: <HomePage />,
+  //   requiresAuth: false,
+  // },
   {
     name: "Dashboard",
-    href: "/dashboard",
+    href: "/qualifai",
     icon: <IoLaptopOutline />,
     requiresAuth: true,
   },

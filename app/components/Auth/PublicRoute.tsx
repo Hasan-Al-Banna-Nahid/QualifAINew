@@ -11,7 +11,7 @@ interface PublicRouteProps {
 
 export default function PublicRoute({
   children,
-  fallbackPath = "/dashboard",
+  fallbackPath = "/",
 }: PublicRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();

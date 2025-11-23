@@ -1,8 +1,18 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Quicksand } from "next/font/google";
 import "./globals.css";
-import RootClientWrapper from "./RootClientWrapper";
-import { sidebarRoutes } from "@/app/components/Sidebar/Routes";
+import { ThemeProvider } from "../context/ThemeContext";
+import Navbar from "../components/Navbar/Navbar";
+import { routes } from "../components/Navbar/Routes";
+import { sidebarRoutes } from "../components/Sidebar/Routes";
+import ClientLayout from "./clientWrapper";
+import { AuthProvider } from "../context/AuthContext";
+import { LayoutProvider } from "../context/LayoutContext";
+import { AuthRouteProvider } from "@/app/context/AuthRouteContext";
+import TanstackQueryProvider from "./providers/TanstackQueryProvider";
+import FirebaseAuthListener from "@/app/components/Auth/FirebaseAuthListener";
+import { ScrollProvider } from "../context/ScrollContext";
 
 const font = Quicksand({
   subsets: ["latin", "vietnamese"],
@@ -12,17 +22,29 @@ const font = Quicksand({
 export const metadata: Metadata = {
   title: "QualifAI - AI-Powered Quality Assurance",
   description:
-    "Transform your SOWs, briefs, and requirements into machine-verifiable quality checks. Stop missing deliverables and start shipping flawless client work.",
-  keywords:
-    "quality assurance, AI, automation, agency tools, SOW, scope management",
-  authors: [{ name: "QualifAI Team" }],
-  openGraph: {
-    title: "QualifAI - AI-Powered Quality Assurance",
-    description: "Transform your quality assurance process with AI",
-    type: "website",
-    locale: "en_US",
-  },
+    "Transform your SOWs, briefs, and requirements into machine-verifiable quality checks.",
 };
+
+// Client wrapper that uses all contexts
+function AppClientWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <TanstackQueryProvider>
+      <AuthRouteProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <LayoutProvider>
+              <FirebaseAuthListener />
+              <Navbar routes={routes} />
+              <ClientLayout sidebarRoutes={sidebarRoutes}>
+                <main className="min-h-screen pt-16">{children}</main>
+              </ClientLayout>
+            </LayoutProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </AuthRouteProvider>
+    </TanstackQueryProvider>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -35,9 +57,7 @@ export default function RootLayout({
         className={`${font.className} antialiased`}
         suppressHydrationWarning
       >
-        <RootClientWrapper sidebarRoutes={sidebarRoutes}>
-          {children}
-        </RootClientWrapper>
+        <AppClientWrapper>{children}</AppClientWrapper>
       </body>
     </html>
   );
