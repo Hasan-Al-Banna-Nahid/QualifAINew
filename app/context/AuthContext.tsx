@@ -40,6 +40,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { intendedRoute, clearIntendedRoute } = useAuthRoute();
 
   const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
+  const [lastAuthAction, setLastAuthAction] = useState<
+    "login" | "google" | "register" | null
+  >(null);
 
   const loginMutation = useLogin();
   const registerMutation = useRegister();
@@ -59,21 +62,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userError]);
 
-  // FIXED: Only redirect after successful login, not on every page load
+  // FIXED: Only redirect after successful login when coming from auth pages
   useEffect(() => {
+    // Only redirect if user just logged in and we're on an auth-related page
+    const isAuthPage =
+      pathname?.includes("/login") ||
+      pathname?.includes("/register") ||
+      pathname === "/";
+
     if (
       loginMutation.isSuccess &&
       user &&
       !authActionLoading &&
-      hasJustLoggedIn
+      hasJustLoggedIn &&
+      isAuthPage
     ) {
-      const redirectPath = intendedRoute || "/qualifai"; // Redirect to dashboard instead of home
+      const redirectPath = intendedRoute || "/qualifai";
       clearIntendedRoute();
       setHasJustLoggedIn(false);
 
+      console.log(
+        `🔄 Redirecting from ${pathname} to ${redirectPath} after login`
+      );
+
       setTimeout(() => {
         router.push(redirectPath);
-      }, 1000);
+      }, 500);
     }
   }, [
     loginMutation.isSuccess,
@@ -83,17 +97,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearIntendedRoute,
     router,
     hasJustLoggedIn,
+    pathname,
   ]);
 
-  // FIXED: Only redirect after Google sign in
+  // FIXED: Only redirect after Google sign in when coming from auth pages
   useEffect(() => {
-    if (googleSignInMutation.isSuccess && user && !authActionLoading) {
-      const redirectPath = intendedRoute || "/qualifai"; // Redirect to dashboard instead of home
+    const isAuthPage =
+      pathname?.includes("/login") ||
+      pathname?.includes("/register") ||
+      pathname === "/";
+
+    if (
+      googleSignInMutation.isSuccess &&
+      user &&
+      !authActionLoading &&
+      isAuthPage
+    ) {
+      const redirectPath = intendedRoute || "/qualifai";
       clearIntendedRoute();
+
+      console.log(
+        `🔄 Redirecting from ${pathname} to ${redirectPath} after Google sign in`
+      );
 
       setTimeout(() => {
         router.push(redirectPath);
-      }, 1000);
+      }, 500);
     }
   }, [
     googleSignInMutation.isSuccess,
@@ -102,38 +131,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     intendedRoute,
     clearIntendedRoute,
     router,
+    pathname,
   ]);
 
-  // Handle registration success
+  // Handle registration success - redirect to login
   useEffect(() => {
-    if (registerMutation.isSuccess && !registerMutation.isPending) {
+    const isAuthPage = pathname?.includes("/register") || pathname === "/";
+
+    if (
+      registerMutation.isSuccess &&
+      !registerMutation.isPending &&
+      isAuthPage
+    ) {
+      console.log("✅ Registration successful, redirecting to login");
+
       setTimeout(() => {
         router.push("/login");
       }, 1500);
     }
-  }, [registerMutation.isSuccess, registerMutation.isPending, router]);
+  }, [
+    registerMutation.isSuccess,
+    registerMutation.isPending,
+    router,
+    pathname,
+  ]);
+
+  // Handle logout success
+  useEffect(() => {
+    if (logoutMutation.isSuccess && !logoutMutation.isPending) {
+      console.log("✅ Logout successful, redirecting to home");
+
+      // Clear any intended routes
+      clearIntendedRoute();
+
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
+    }
+  }, [
+    logoutMutation.isSuccess,
+    logoutMutation.isPending,
+    router,
+    clearIntendedRoute,
+  ]);
 
   // Handle errors
   useEffect(() => {
     if (loginMutation.error) {
-      // Handle login error
+      console.error("Login error:", loginMutation.error);
+      setHasJustLoggedIn(false); // Reset login state on error
     }
 
     if (registerMutation.error) {
-      // Handle register error
+      console.error("Registration error:", registerMutation.error);
     }
 
     if (googleSignInMutation.error) {
-      // Handle Google sign in error
+      console.error("Google sign in error:", googleSignInMutation.error);
     }
   }, [loginMutation.error, registerMutation.error, googleSignInMutation.error]);
 
   const login = async (data: LoginFormData) => {
-    setHasJustLoggedIn(true); // Mark that user just logged in
+    setHasJustLoggedIn(true);
     try {
       await loginMutation.mutateAsync(data);
     } catch (error) {
-      setHasJustLoggedIn(false); // Reset if login fails
+      setHasJustLoggedIn(false);
+      throw error; // Re-throw to handle in component
     }
   };
 
@@ -145,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password: data.password,
       });
     } catch (error) {
-      // Error handled in useEffect
+      throw error; // Re-throw to handle in component
     }
   };
 
@@ -153,7 +217,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await logoutMutation.mutateAsync();
     } catch (error: any) {
-      // Handle logout error
+      console.error("Logout error:", error);
+      throw error; // Re-throw to handle in component
     }
   };
 
@@ -161,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await googleSignInMutation.mutateAsync();
     } catch (error) {
-      // Error handled in useEffect
+      throw error; // Re-throw to handle in component
     }
   };
 
