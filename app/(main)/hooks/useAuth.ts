@@ -1,8 +1,8 @@
 // lib/hooks/useAuth.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { firebaseAuthService } from "../services/firebase-auth-services";
-import { LoginFormData, RegisterFormData } from "../validations/auth";
-import { User } from "../services/firebase-auth-services";
+import { firebaseAuthService } from "../lib/services/firebase-auth-services";
+import { LoginFormData, RegisterFormData } from "../lib/validations/auth";
+import { User } from "../lib/services/firebase-auth-services";
 
 export const useLogin = () => {
   const queryClient = useQueryClient();

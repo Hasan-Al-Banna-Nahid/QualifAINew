@@ -1,7 +1,5 @@
-// components/animations/ProblemIndicator.tsx
-"use client";
-
-import { motion } from "framer-motion";
+// components/ProblemIndicator.tsx
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
   Zap,
@@ -9,91 +7,250 @@ import {
   Search,
   FileText,
   Code,
-  Cpu,
+  Eye,
+  ShoppingCart,
+  BarChart3,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Problem } from "@/app/(main)/hooks/useWordpressAnalysis";
 
-export function ProblemIndicator({
+interface ProblemIndicatorProps {
+  problem: Problem;
+  onProblemClick: (problem: Problem) => void;
+  index: number;
+}
+
+const ProblemIcon = ({
   type,
-  message,
-  position,
+  severity,
 }: {
   type: string;
-  message: string;
-  position: { x: number; y: number };
-}) {
-  const icons = {
-    performance: Zap,
-    security: Shield,
-    seo: Search,
-    content: FileText,
-    technical: Code,
-    plugins: Cpu,
+  severity: string;
+}) => {
+  const iconProps = {
+    className: cn(
+      "w-4 h-4",
+      severity === "critical"
+        ? "text-red-500"
+        : severity === "high"
+        ? "text-orange-500"
+        : severity === "medium"
+        ? "text-yellow-500"
+        : "text-blue-500"
+    ),
   };
 
+  const icons: { [key: string]: JSX.Element } = {
+    performance: <Zap {...iconProps} />,
+    security: <Shield {...iconProps} />,
+    seo: <Search {...iconProps} />,
+    content: <FileText {...iconProps} />,
+    technical: <Code {...iconProps} />,
+    accessibility: <Eye {...iconProps} />,
+    ecommerce: <ShoppingCart {...iconProps} />,
+    analytics: <BarChart3 {...iconProps} />,
+  };
+
+  return icons[type] || <AlertTriangle {...iconProps} />;
+};
+
+const GlowingBadge = ({ severity }: { severity: string }) => {
   const colors = {
-    performance: "text-yellow-500",
-    security: "text-red-500",
-    seo: "text-purple-500",
-    content: "text-blue-500",
-    technical: "text-green-500",
-    plugins: "text-indigo-500",
+    critical: "from-red-500 to-pink-500",
+    high: "from-orange-500 to-red-500",
+    medium: "from-yellow-500 to-orange-500",
+    low: "from-blue-500 to-cyan-500",
   };
-
-  const Icon = icons[type as keyof typeof icons] || AlertTriangle;
-  const color = colors[type as keyof typeof colors] || "text-gray-500";
 
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0, opacity: 0 }}
-      className="absolute cursor-pointer z-50"
-      style={{ left: position.x, top: position.y }}
-      whileHover={{ scale: 1.2 }}
-      whileTap={{ scale: 0.9 }}
+      className={cn(
+        "absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-r",
+        colors[severity]
+      )}
+      animate={{
+        scale: [1, 1.5, 1],
+        opacity: [0.7, 1, 0.7],
+      }}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+};
+
+export const ProblemIndicator: React.FC<ProblemIndicatorProps> = ({
+  problem,
+  onProblemClick,
+  index,
+}) => {
+  const severityColors = {
+    critical: "border-red-500 bg-red-500/20",
+    high: "border-orange-500 bg-orange-500/20",
+    medium: "border-yellow-500 bg-yellow-500/20",
+    low: "border-blue-500 bg-blue-500/20",
+  };
+
+  const pulseAnimations = {
+    critical: {
+      scale: [1, 1.1, 1],
+      boxShadow: [
+        "0 0 0 0 rgba(239, 68, 68, 0.7)",
+        "0 0 0 10px rgba(239, 68, 68, 0)",
+        "0 0 0 0 rgba(239, 68, 68, 0)",
+      ],
+    },
+    high: {
+      scale: [1, 1.05, 1],
+      boxShadow: [
+        "0 0 0 0 rgba(249, 115, 22, 0.7)",
+        "0 0 0 8px rgba(249, 115, 22, 0)",
+        "0 0 0 0 rgba(249, 115, 22, 0)",
+      ],
+    },
+    medium: {
+      scale: [1, 1.03, 1],
+      boxShadow: [
+        "0 0 0 0 rgba(245, 158, 11, 0.7)",
+        "0 0 0 6px rgba(245, 158, 11, 0)",
+        "0 0 0 0 rgba(245, 158, 11, 0)",
+      ],
+    },
+    low: {
+      scale: [1, 1.02, 1],
+      boxShadow: [
+        "0 0 0 0 rgba(59, 130, 246, 0.7)",
+        "0 0 0 4px rgba(59, 130, 246, 0)",
+        "0 0 0 0 rgba(59, 130, 246, 0)",
+      ],
+    },
+  };
+
+  return (
+    <motion.div
+      initial={{
+        scale: 0,
+        opacity: 0,
+        x: -50,
+        y: -50,
+      }}
+      animate={{
+        scale: 1,
+        opacity: 1,
+        x: 0,
+        y: 0,
+      }}
+      exit={{
+        scale: 0,
+        opacity: 0,
+        x: 50,
+        y: 50,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 20,
+        delay: index * 0.1,
+      }}
+      className={cn(
+        "absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2",
+        "border-2 rounded-full p-2 backdrop-blur-sm",
+        severityColors[problem.severity]
+      )}
+      style={{
+        left: problem.position.x,
+        top: problem.position.y,
+      }}
+      onClick={() => onProblemClick(problem)}
     >
-      {/* Pulsing Animation */}
       <motion.div
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.7, 0.3, 0.7],
+        animate={pulseAnimations[problem.severity]}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="absolute inset-0 bg-current rounded-full"
-      />
-
-      {/* Main Icon */}
-      <motion.div
-        animate={{
-          rotate: [0, -10, 10, 0],
-        }}
-        transition={{ duration: 0.5, repeat: Infinity }}
-        className={`relative ${color} bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg border-2 border-current`}
+        className="relative"
       >
-        <Icon className="w-4 h-4" />
+        <motion.div
+          whileHover={{ scale: 1.2, rotate: 360 }}
+          whileTap={{ scale: 0.9 }}
+          className="relative z-10"
+        >
+          <ProblemIcon type={problem.type} severity={problem.severity} />
+        </motion.div>
+
+        <GlowingBadge severity={problem.severity} />
+
+        {/* Floating particles */}
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          animate={{
+            rotate: [0, 360],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          {[0, 90, 180, 270].map((rotation) => (
+            <motion.div
+              key={rotation}
+              className={cn(
+                "absolute w-1 h-1 rounded-full",
+                problem.severity === "critical"
+                  ? "bg-red-400"
+                  : problem.severity === "high"
+                  ? "bg-orange-400"
+                  : problem.severity === "medium"
+                  ? "bg-yellow-400"
+                  : "bg-blue-400"
+              )}
+              style={{
+                top: "50%",
+                left: "50%",
+                transform: `rotate(${rotation}deg) translateX(12px)`,
+              }}
+              animate={{
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                delay: (rotation / 90) * 0.5,
+              }}
+            />
+          ))}
+        </motion.div>
       </motion.div>
 
-      {/* Tooltip */}
+      {/* Tooltip on hover */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        whileHover={{ opacity: 1, y: 0 }}
-        className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl z-50"
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileHover={{ opacity: 1, scale: 1 }}
+        className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap z-50 pointer-events-none"
       >
-        <div className="font-medium capitalize mb-1">{type}</div>
-        <div className="text-gray-300">{message}</div>
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900" />
-      </motion.div>
-
-      {/* Arrow pointing to problem area */}
-      <motion.div
-        animate={{
-          y: [0, -5, 0],
-        }}
-        transition={{ duration: 1, repeat: Infinity }}
-        className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 text-current"
-      >
-        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-current" />
+        <div className="font-semibold capitalize">{problem.type}</div>
+        <div className="text-xs opacity-80">{problem.message}</div>
+        <div
+          className={cn(
+            "text-xs font-bold mt-1",
+            problem.severity === "critical"
+              ? "text-red-300"
+              : problem.severity === "high"
+              ? "text-orange-300"
+              : problem.severity === "medium"
+              ? "text-yellow-300"
+              : "text-blue-300"
+          )}
+        >
+          {problem.severity.toUpperCase()}
+        </div>
       </motion.div>
     </motion.div>
   );
-}
+};

@@ -3,6 +3,20 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  useWordPressAnalysis,
+  type AnalysisResult,
+  type Problem,
+} from "@/app/(main)/hooks/useWordpressAnalysis";
+import { ProblemIndicator } from "@/app/components/animations/ProblemIndicator";
+import { ProblemModal } from "@/app/components/wordpress/ProblemModal";
+import { APITestingPanel } from "@/app/components/wordpress/APITestingPanel";
+import { FileUploadPanel } from "@/app/components/wordpress/FileUploadPanel";
+import { DYNAMIC_QA_FEATURES } from "./data/qaFeatures";
+import { cn } from "@/lib/utils";
+
+// Import icons
 import {
   Globe,
   Settings,
@@ -22,813 +36,556 @@ import {
   Sparkles,
   FileText,
   ExternalLink,
-  Database,
-  Cpu,
-  Users,
-  TrendingUp,
-  Lightbulb,
   Rocket,
   Bug,
-  Clock,
-  Wifi,
-  Figma,
-  Server,
-  Network,
-  Cloud,
-  Mail,
-  Phone,
-  MessageCircle,
+  Lightbulb,
   Camera,
-  Video,
-  Music,
-  ShoppingCart,
-  CreditCard,
-  DollarSign,
-  PieChart,
-  Activity,
-  Battery,
-  Signal,
-  Lock,
-  UploadCloud,
-  MousePointerClick,
-  Type,
-  Image,
-  Film,
-  Mic,
-  Navigation,
-  Flag,
-  Bell,
-  UserCheck,
-  Package,
-  Home,
-  Building,
-  Award,
-  Target,
-  Feather,
-  Heart,
-  Star,
-  CloudRain,
-  Wind,
-  Coffee,
-  Gamepad,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Headphones,
-  Printer,
-  Scan,
-  HardDrive,
-  Wrench,
-  Tool,
-  Sliders,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  RotateCw,
+  Wifi,
   X,
   Check,
-  Plus,
-  Minus,
+  ArrowRight,
+  Home,
+  Users,
+  TrendingUp,
+  Award,
+  Monitor,
+  Smartphone,
+  Wrench,
+  Sliders,
+  RotateCw,
   MoreHorizontal,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 
-// DYNAMIC 100+ QA FEATURES - COMPLETE LIST
-const DYNAMIC_QA_FEATURES = [
-  {
-    id: "performance",
-    name: "Performance",
-    icon: Zap,
-    color: "from-yellow-500 to-orange-500",
-    tests: [
-      "Page Load Time Analysis",
-      "Largest Contentful Paint (LCP)",
-      "First Input Delay (FID)",
-      "Cumulative Layout Shift (CLS)",
-      "First Contentful Paint (FCP)",
-      "Time to First Byte (TTFB)",
-      "Speed Index Measurement",
-      "Total Blocking Time (TBT)",
-      "Core Web Vitals Assessment",
-      "Server Response Time Analysis",
-      "Caching Efficiency Check",
-      "Image Optimization Analysis",
-      "JavaScript Execution Time",
-      "CSS Optimization Check",
-      "Font Loading Performance",
-      "Third-party Script Impact",
-      "CDN Utilization Analysis",
-      "Gzip Compression Check",
-      "Browser Caching Headers",
-      "Resource Minification Status",
-      "Lazy Loading Implementation",
-      "Above-the-fold Optimization",
-      "Critical CSS Extraction",
-      "DNS Lookup Time",
-      "SSL/TLS Handshake Time",
-      "TCP Connection Time",
-      "Request/Response Cycle Analysis",
-      "Memory Usage Analysis",
-      "CPU Utilization Check",
-      "Network Latency Measurement",
-      "Render Blocking Resources",
-      "Main Thread Work Analysis",
-      "JavaScript Bundle Size",
-      "CSS Delivery Optimization",
-      "Font Display Strategy",
-      "Preload Key Requests",
-      "Efficient Caching Policy",
-      "Asset Compression Check",
-      "Connection Reuse Analysis",
-    ],
-  },
-  {
-    id: "seo",
-    name: "SEO",
-    icon: Search,
-    color: "from-purple-500 to-pink-500",
-    tests: [
-      "Meta Tags Optimization",
-      "Heading Structure Analysis",
-      "XML Sitemap Validation",
-      "Robots.txt Configuration",
-      "Structured Data Markup",
-      "Mobile Friendliness Test",
-      "Page Speed SEO Impact",
-      "Content Quality Assessment",
-      "Keyword Optimization Check",
-      "Image Alt Text Analysis",
-      "URL Structure Evaluation",
-      "Internal Linking Analysis",
-      "External Linking Quality",
-      "Canonical Tags Check",
-      "Open Graph Tags Validation",
-      "Twitter Card Tags Check",
-      "Schema.org Implementation",
-      "Breadcrumb Markup Test",
-      "Site Navigation SEO",
-      "Pagination SEO Check",
-      "HTTPS Migration Impact",
-      "Site Architecture Analysis",
-      "Content Freshness Evaluation",
-      "Duplicate Content Check",
-      "Page Title Optimization",
-      "Meta Description Quality",
-      "Search Console Integration",
-      "Analytics Setup Verification",
-      "Local SEO Check",
-      "International SEO Setup",
-      "Rich Snippets Optimization",
-      "FAQ Schema Implementation",
-      "Product Schema Markup",
-      "Review Schema Integration",
-      "Video SEO Optimization",
-      "Image SEO Best Practices",
-      "Site Links Optimization",
-      "Mobile-First Indexing",
-      "Core Web Vitals SEO Impact",
-    ],
-  },
-  {
-    id: "security",
-    name: "Security",
-    icon: Shield,
-    color: "from-red-500 to-rose-500",
-    tests: [
-      "SSL Certificate Validation",
-      "Security Headers Check",
-      "WordPress Version Security",
-      "Plugin Security Audit",
-      "Theme Security Analysis",
-      "File Permissions Check",
-      "Brute Force Protection",
-      "Database Security Assessment",
-      "Firewall Status Check",
-      "Malware Scan",
-      "Vulnerability Assessment",
-      "Two-Factor Authentication",
-      "User Role Security",
-      "Login Security Measures",
-      "Database Prefix Security",
-      "WP-Config Security",
-      "File Integrity Monitoring",
-      "Backup Security Check",
-      "Admin Security Measures",
-      "Comment Spam Protection",
-      "XML-RPC Security",
-      "HTTP Security Headers",
-      "CSP Implementation Check",
-      "XSS Protection Verification",
-      "CSRF Protection Check",
-      "SQL Injection Prevention",
-      "Directory Browsing Prevention",
-      "Error Information Leakage",
-      "Clickjacking Protection",
-      "MIME Sniffing Prevention",
-      "Referrer Policy Check",
-      "Feature Policy Headers",
-      "Certificate Transparency",
-      "Security.txt Validation",
-      "HSTS Preload Status",
-      "Mixed Content Check",
-      "Cookie Security Analysis",
-      "Subresource Integrity",
-      "Content Security Policy",
-    ],
-  },
-  {
-    id: "content",
-    name: "Content",
-    icon: FileText,
-    color: "from-blue-500 to-cyan-500",
-    tests: [
-      "Broken Links Check",
-      "Image Optimization Analysis",
-      "Content Quality Assessment",
-      "Readability Score Calculation",
-      "Mobile Responsive Content",
-      "Content Freshness Evaluation",
-      "Multimedia Content Optimization",
-      "Call-to-Actions Effectiveness",
-      "Content Structure Analysis",
-      "Text-to-HTML Ratio",
-      "Content Length Assessment",
-      "Keyword Density Analysis",
-      "Content Uniqueness Check",
-      "Content Gap Analysis",
-      "User Engagement Metrics",
-      "Content Update Frequency",
-      "Multilingual Content Check",
-      "Accessibility Content Check",
-      "Content Performance Metrics",
-      "Content Strategy Alignment",
-      "Visual Content Optimization",
-      "Interactive Content Check",
-      "Content Loading Priority",
-      "Content Delivery Network",
-      "Content Caching Strategy",
-      "Dynamic Content Performance",
-      "Content Personalization Check",
-      "Content Security Verification",
-      "Content Backup Check",
-      "Content Version Control",
-      "Content Readability Score",
-      "Content Scannability",
-      "Content Hierarchy Analysis",
-      "Content Tone & Voice",
-      "Content Localization",
-      "Content Syndication Check",
-      "Content Update Strategy",
-      "Content Performance Tracking",
-      "Content A/B Testing Setup",
-    ],
-  },
-  {
-    id: "technical",
-    name: "Technical",
-    icon: Code,
-    color: "from-green-500 to-emerald-500",
-    tests: [
-      "HTML Validation Check",
-      "CSS Validation Analysis",
-      "JavaScript Errors Scan",
-      "Database Optimization",
-      "Caching Implementation",
-      "CDN Usage Analysis",
-      "API Endpoints Check",
-      "Third-party Scripts Audit",
-      "Server Configuration Check",
-      "DNS Configuration Analysis",
-      "Email Deliverability Test",
-      "Cron Job Verification",
-      "Error Log Analysis",
-      "PHP Version Check",
-      "MySQL Version Analysis",
-      "Server Resources Check",
-      "Load Time Under Stress",
-      "Uptime Monitoring Setup",
-      "Backup System Verification",
-      "Restore Process Test",
-      "Migration Readiness Check",
-      "Compatibility Testing",
-      "Browser Compatibility Test",
-      "Mobile Device Testing",
-      "Operating System Compatibility",
-      "Screen Reader Compatibility",
-      "Progressive Web App Check",
-      "Offline Functionality Test",
-      "Service Worker Check",
-      "Web App Manifest Validation",
-      "API Response Time",
-      "Database Query Optimization",
-      "Server-Side Caching",
-      "Load Balancer Configuration",
-      "SSL/TLS Configuration",
-      "HTTP/2 Implementation",
-      "Database Indexing Analysis",
-      "Query Performance",
-      "Server Response Codes",
-    ],
-  },
-  {
-    id: "accessibility",
-    name: "Accessibility",
-    icon: Eye,
-    color: "from-amber-500 to-orange-500",
-    tests: [
-      "WCAG 2.1 Compliance Check",
-      "Screen Reader Compatibility",
-      "Keyboard Navigation Test",
-      "Color Blindness Check",
-      "Text Resizing Test",
-      "High Contrast Mode",
-      "Voice Control Compatibility",
-      "Focus Management Check",
-      "ARIA Labels Validation",
-      "Alt Text Completeness",
-      "Form Label Association",
-      "Error Identification Check",
-      "Time-based Media Access",
-      "Seizure Safety Check",
-      "Navigation Consistency",
-      "Link Purpose Clarity",
-      "Reading Level Assessment",
-      "Language Attribute Check",
-      "Page Title Clarity",
-      "Heading Structure Logic",
-      "List Markup Check",
-      "Table Accessibility",
-      "Form Field Instructions",
-      "Error Suggestion Quality",
-      "Timeout Adjustment Check",
-      "Animation Control Test",
-      "Audio Control Check",
-      "Video Caption Quality",
-      "Motion Reduction Support",
-      "Orientation Lock Check",
-      "Touch Target Size",
-      "Pointer Gestures",
-      "Content on Hover/Focus",
-      "Visual Presentation",
-      "Audio Description",
-      "Sign Language Interpretation",
-      "Adaptive Content",
-      "Cognitive Accessibility",
-      "Learning Disability Support",
-    ],
-  },
-  {
-    id: "ecommerce",
-    name: "E-commerce",
-    icon: ShoppingCart,
-    color: "from-teal-500 to-cyan-500",
-    tests: [
-      "Shopping Cart Functionality",
-      "Checkout Process Analysis",
-      "Payment Gateway Integration",
-      "Product Page Optimization",
-      "Inventory Management Check",
-      "Order Processing Test",
-      "Shipping Calculation Check",
-      "Tax Configuration Test",
-      "Coupon System Validation",
-      "Wishlist Functionality",
-      "Product Search Accuracy",
-      "Filter System Effectiveness",
-      "Sorting Options Check",
-      "Product Image Quality",
-      "Product Description Quality",
-      "Review System Check",
-      "Rating System Validation",
-      "Related Products Display",
-      "Upsell/Cross-sell Test",
-      "Abandoned Cart Analysis",
-      "Email Notification Check",
-      "Order Confirmation Test",
-      "Return Process Check",
-      "Refund System Test",
-      "Multi-currency Support",
-      "Multi-language Check",
-      "Mobile Commerce Test",
-      "Security Compliance Check",
-      "GDPR Compliance",
-      "Payment Security Audit",
-      "Inventory Sync Check",
-      "Order Status Updates",
-      "Shipping Provider Integration",
-      "Tax Calculation Accuracy",
-      "Discount Code Validation",
-      "Gift Card Functionality",
-    ],
-  },
-  {
-    id: "analytics",
-    name: "Analytics & Tracking",
-    icon: BarChart3,
-    color: "from-violet-500 to-purple-500",
-    tests: [
-      "Google Analytics Setup",
-      "Google Tag Manager Check",
-      "Conversion Tracking Test",
-      "Event Tracking Validation",
-      "E-commerce Tracking Check",
-      "Goal Configuration Test",
-      "UTM Parameter Support",
-      "Cross-domain Tracking Check",
-      "Subdomain Tracking Test",
-      "Filter Configuration Check",
-      "Data Layer Implementation",
-      "Custom Dimension Setup",
-      "Custom Metric Validation",
-      "Enhanced E-commerce Check",
-      "Remarketing Tag Test",
-      "Facebook Pixel Integration",
-      "Twitter Pixel Check",
-      "LinkedIn Insight Tag",
-      "Heatmap Tool Integration",
-      "Session Recording Check",
-      "A/B Testing Setup",
-      "Personalization Tracking",
-      "CRM Integration Test",
-      "Email Marketing Integration",
-      "Social Media Tracking",
-      "Offline Conversion Tracking",
-      "Mobile App Tracking Check",
-      "Data Privacy Compliance",
-      "Cookie Consent Setup",
-      "GDPR Tracking Compliance",
-      "Analytics Accuracy Check",
-      "Real-time Reporting",
-      "Custom Report Validation",
-      "Data Export Functionality",
-      "API Integration Check",
-      "Data Retention Policy",
-    ],
-  },
-];
+// Enhanced Website Preview Component
+const EnhancedWebsitePreview = ({
+  websiteUrl,
+  problems,
+  onProblemClick,
+  onScreenshot,
+}: {
+  websiteUrl: string;
+  problems: Problem[];
+  onProblemClick: (problem: Problem) => void;
+  onScreenshot: (screenshot: string) => void;
+}) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-// Problem Indicator Component
-const ProblemIndicator = ({ problem, onProblemClick }: any) => {
+  const captureScreenshot = useCallback(async () => {
+    // Create a mock screenshot for demo
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#333333";
+      ctx.font = "bold 24px Arial";
+      ctx.fillText("Website Preview: " + websiteUrl, 50, 50);
+
+      ctx.fillStyle = "#666666";
+      ctx.font = "16px Arial";
+      ctx.fillText("Live website content would be displayed here", 50, 100);
+
+      // Add problem markers
+      problems.forEach((problem, index) => {
+        const color =
+          problem.severity === "critical"
+            ? "#ef4444"
+            : problem.severity === "high"
+            ? "#f97316"
+            : problem.severity === "medium"
+            ? "#eab308"
+            : "#3b82f6";
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(100 + index * 120, 200, 6, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      const screenshot = canvas.toDataURL("image/png");
+      onScreenshot(screenshot);
+    }
+  }, [websiteUrl, problems, onScreenshot]);
+
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0, opacity: 0 }}
-      className={`absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 ${
-        problem.severity === "critical"
-          ? "text-red-500"
-          : problem.severity === "high"
-          ? "text-orange-500"
-          : problem.severity === "medium"
-          ? "text-yellow-500"
-          : "text-blue-500"
-      }`}
-      style={{ left: problem.position.x, top: problem.position.y }}
-      onClick={() => onProblemClick(problem)}
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-4 border border-gray-200/50 dark:border-gray-700/50 shadow-lg mb-8"
     >
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          rotate: [0, 10, -10, 0],
-        }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="relative"
-      >
-        <AlertTriangle className="w-6 h-6 drop-shadow-lg" />
-        <motion.div
-          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute inset-0 bg-current rounded-full blur-sm"
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-900 dark:text-white">
+          Live Preview with Problem Indicators
+        </h3>
+        <div className="flex items-center space-x-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={captureScreenshot}
+            className="flex items-center space-x-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Capture Screenshot</span>
+          </motion.button>
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <Wifi className="w-4 h-4" />
+            <span>Live Connection</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative h-96 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-white">
+        {/* Website Preview */}
+        <iframe
+          ref={iframeRef}
+          src={websiteUrl}
+          className="w-full h-full"
+          title="Website Preview"
+          sandbox="allow-same-origin allow-scripts"
+          onError={(e) => {
+            console.error("Iframe failed to load:", e);
+          }}
         />
-      </motion.div>
+
+        {/* Animated Problem Indicators */}
+        <div className="absolute inset-0 pointer-events-none">
+          <AnimatePresence>
+            {problems.map((problem, index) => (
+              <ProblemIndicator
+                key={`${problem.type}-${index}`}
+                problem={problem}
+                onProblemClick={onProblemClick}
+                index={index}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Floating Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg backdrop-blur-sm"
+        >
+          <div className="text-sm">
+            <div className="flex items-center space-x-4 text-xs">
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span>
+                  Critical:{" "}
+                  {problems.filter((p) => p.severity === "critical").length}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>
+                  High: {problems.filter((p) => p.severity === "high").length}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>
+                  Medium:{" "}
+                  {problems.filter((p) => p.severity === "medium").length}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   );
 };
 
-// API Testing Component
-const APITestingPanel = ({ websiteUrl, onTestComplete }: any) => {
-  const [apiTests, setApiTests] = useState([
-    {
-      id: 1,
-      name: "WordPress REST API",
-      endpoint: "/wp-json/wp/v2/",
-      method: "GET",
-      status: "pending",
-    },
-    {
-      id: 2,
-      name: "Posts API",
-      endpoint: "/wp-json/wp/v2/posts",
-      method: "GET",
-      status: "pending",
-    },
-    {
-      id: 3,
-      name: "Users API",
-      endpoint: "/wp-json/wp/v2/users",
-      method: "GET",
-      status: "pending",
-    },
-    {
-      id: 4,
-      name: "Media API",
-      endpoint: "/wp-json/wp/v2/media",
-      method: "GET",
-      status: "pending",
-    },
-    {
-      id: 5,
-      name: "Comments API",
-      endpoint: "/wp-json/wp/v2/comments",
-      method: "GET",
-      status: "pending",
-    },
-    {
-      id: 6,
-      name: "Settings API",
-      endpoint: "/wp-json/wp/v2/settings",
-      method: "GET",
-      status: "pending",
-    },
-  ]);
-
-  const [emailTest, setEmailTest] = useState({
-    to: "",
-    subject: "Test Email from QualifAI",
-    message: "This is a test email to verify email functionality.",
-    status: "pending",
-  });
-
-  const runAPITests = async () => {
-    const updatedTests = [...apiTests];
-
-    for (let test of updatedTests) {
-      try {
-        test.status = "running";
-        setApiTests([...updatedTests]);
-
-        const response = await fetch(`${websiteUrl}${test.endpoint}`);
-        test.status = response.ok ? "success" : "failed";
-
-        setApiTests([...updatedTests]);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      } catch (error) {
-        test.status = "failed";
-        setApiTests([...updatedTests]);
-      }
-    }
-
-    onTestComplete(updatedTests);
-  };
-
-  const testEmailFunctionality = async () => {
-    setEmailTest((prev) => ({ ...prev, status: "running" }));
-
-    try {
-      const response = await fetch("/api/test-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(emailTest),
-      });
-
-      const result = await response.json();
-      setEmailTest((prev) => ({
-        ...prev,
-        status: result.success ? "success" : "failed",
-      }));
-    } catch (error) {
-      setEmailTest((prev) => ({ ...prev, status: "failed" }));
-    }
-  };
+// Analysis Results Component
+const AnalysisResults = ({
+  analysis,
+  onProblemClick,
+}: {
+  analysis: AnalysisResult;
+  onProblemClick: (problem: Problem) => void;
+}) => {
+  if (!analysis) return null;
 
   return (
     <div className="space-y-6">
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          API Endpoint Testing
-        </h3>
+      {/* Overall Score Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Analysis Complete!
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {analysis.summary}
+            </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {apiTests.map((test) => (
-            <div
-              key={test.id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-            >
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    test.status === "success"
-                      ? "bg-green-500"
-                      : test.status === "failed"
-                      ? "bg-red-500"
-                      : test.status === "running"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-gray-400"
-                  }`}
-                />
-                <div>
-                  <div className="font-medium text-sm">{test.name}</div>
-                  <code className="text-xs text-gray-600 dark:text-gray-400">
-                    {test.method} {test.endpoint}
-                  </code>
+            {/* Problem Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {analysis.problems?.filter((p) => p.severity === "critical")
+                    .length || 0}
+                </div>
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  Critical
                 </div>
               </div>
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${
-                  test.status === "success"
-                    ? "bg-green-100 text-green-800"
-                    : test.status === "failed"
-                    ? "bg-red-100 text-red-800"
-                    : test.status === "running"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {test.status}
-              </span>
+              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {analysis.problems?.filter((p) => p.severity === "high")
+                    .length || 0}
+                </div>
+                <div className="text-sm text-orange-600 dark:text-orange-400">
+                  High
+                </div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {analysis.problems?.filter((p) => p.severity === "medium")
+                    .length || 0}
+                </div>
+                <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                  Medium
+                </div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {analysis.problems?.filter((p) => p.severity === "low")
+                    .length || 0}
+                </div>
+                <div className="text-sm text-blue-600 dark:text-blue-400">
+                  Low
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
 
-        <button
-          onClick={runAPITests}
-          className="mt-4 w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-        >
-          Run All API Tests
-        </button>
-      </div>
-
-      {/* Email Testing */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Email Functionality Test
-        </h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              To Email
-            </label>
-            <input
-              type="email"
-              value={emailTest.to}
-              onChange={(e) =>
-                setEmailTest((prev) => ({ ...prev, to: e.target.value }))
-              }
-              placeholder="test@example.com"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            {/* AI Recommendations Summary */}
+            {analysis.aiRecommendations && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Recommendations
+                </h4>
+                <p className="text-blue-800 dark:text-blue-200 text-sm">
+                  {analysis.aiRecommendations.combined?.summary ||
+                    analysis.aiRecommendations.fallback?.summary ||
+                    "AI insights available"}
+                </p>
+              </div>
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Subject
-            </label>
-            <input
-              type="text"
-              value={emailTest.subject}
-              onChange={(e) =>
-                setEmailTest((prev) => ({ ...prev, subject: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Message
-            </label>
-            <textarea
-              value={emailTest.message}
-              onChange={(e) =>
-                setEmailTest((prev) => ({ ...prev, message: e.target.value }))
-              }
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {/* Score Circle */}
+          <div className="text-center ml-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className={cn(
+                "w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-2xl relative",
+                analysis.score >= 90
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                  : analysis.score >= 70
+                  ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                  : "bg-gradient-to-r from-red-500 to-rose-500"
+              )}
+            >
+              {analysis.score}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-2 border-white/30 border-t-transparent"
+              />
+            </motion.div>
+            <div className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+              Grade: {analysis.grade}
+            </div>
           </div>
         </div>
+      </motion.div>
 
-        <div className="flex items-center justify-between mt-6">
-          <div className="flex items-center space-x-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                emailTest.status === "success"
-                  ? "bg-green-500"
-                  : emailTest.status === "failed"
-                  ? "bg-red-500"
-                  : emailTest.status === "running"
-                  ? "bg-yellow-500 animate-pulse"
-                  : "bg-gray-400"
-              }`}
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {emailTest.status === "success"
-                ? "Email sent successfully"
-                : emailTest.status === "failed"
-                ? "Email failed to send"
-                : emailTest.status === "running"
-                ? "Sending email..."
-                : "Ready to test"}
-            </span>
-          </div>
-
-          <button
-            onClick={testEmailFunctionality}
-            disabled={!emailTest.to || emailTest.status === "running"}
-            className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-          >
-            Test Email
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// File Upload Component
-const FileUploadPanel = ({ onFilesUpload }: any) => {
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const newFiles = files.map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      uploadTime: new Date(),
-      status: "uploaded",
-    }));
-
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-    onFilesUpload([...uploadedFiles, ...newFiles]);
-  };
-
-  return (
-    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-        Upload Design Files
-      </h3>
-
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 dark:text-gray-400 mb-2">
-          Drop your design files here or click to browse
-        </p>
-        <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-          Supports: FIGMA, Sketch, Adobe XD, PSD, AI files
-        </p>
-        <input
-          type="file"
-          multiple
-          onChange={handleFileUpload}
-          className="hidden"
-          id="file-upload"
-          accept=".figma,.sketch,.xd,.psd,.ai,.pdf,.png,.jpg,.jpeg"
-        />
-        <label
-          htmlFor="file-upload"
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer font-medium"
-        >
-          Choose Files
-        </label>
-      </div>
-
-      {uploadedFiles.length > 0 && (
-        <div className="mt-6">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-            Uploaded Files ({uploadedFiles.length})
-          </h4>
-          <div className="space-y-2">
-            {uploadedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <div className="font-medium text-sm">{file.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
+      {/* Detailed Insights Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {analysis.insights?.map((insight: any, index: number) => {
+          const category = DYNAMIC_QA_FEATURES.find(
+            (cat) => cat.id === insight.category
+          );
+          return (
+            <motion.div
+              key={insight.category}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                {category && (
+                  <div
+                    className={cn(
+                      "p-3 rounded-xl bg-gradient-to-r text-white shadow-lg",
+                      category.color
+                    )}
+                  >
+                    <category.icon className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 dark:text-white capitalize">
+                    {insight.category}
+                  </h4>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${insight.score}%` }}
+                      transition={{ duration: 1, delay: index * 0.2 }}
+                      className={cn(
+                        "h-2 rounded-full transition-all duration-1000",
+                        insight.score >= 90
+                          ? "bg-green-500"
+                          : insight.score >= 70
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                      )}
+                    />
                   </div>
                 </div>
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                  Uploaded
-                </span>
+                <div
+                  className={cn(
+                    "px-3 py-1 rounded-full text-sm font-medium",
+                    insight.score >= 90
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                      : insight.score >= 70
+                      ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      : "bg-red-500/20 text-red-600 dark:text-red-400"
+                  )}
+                >
+                  {insight.score}%
+                </div>
               </div>
-            ))}
+
+              <div className="space-y-3">
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
+                    Issues ({insight.issues?.length || 0})
+                  </h5>
+                  <ul className="space-y-1">
+                    {insight.issues
+                      ?.slice(0, 3)
+                      .map((issue: string, i: number) => (
+                        <li
+                          key={i}
+                          className="flex items-start space-x-2 text-sm text-red-600 dark:text-red-400"
+                        >
+                          <Bug className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{issue}</span>
+                        </li>
+                      ))}
+                    {insight.issues?.length > 3 && (
+                      <li className="text-xs text-gray-500 dark:text-gray-400">
+                        +{insight.issues.length - 3} more issues
+                      </li>
+                    )}
+                  </ul>
+                </div>
+
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <Sparkles className="w-4 h-4 mr-2 text-green-500" />
+                    Recommendations
+                  </h5>
+                  <ul className="space-y-1">
+                    {insight.recommendations
+                      ?.slice(0, 2)
+                      .map((rec: string, i: number) => (
+                        <li
+                          key={i}
+                          className="flex items-start space-x-2 text-sm text-green-600 dark:text-green-400"
+                        >
+                          <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{rec}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* View Problems Button */}
+              {insight.issues?.length > 0 && (
+                <button
+                  onClick={() => {
+                    const firstProblem = analysis.problems?.find(
+                      (p) => p.type === insight.category
+                    );
+                    if (firstProblem) onProblemClick(firstProblem);
+                  }}
+                  className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                >
+                  View Problems
+                </button>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* AI Recommendations Section */}
+      {analysis.aiRecommendations && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
+        >
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+            <Bot className="w-5 h-5 mr-2" />
+            AI-Powered Recommendations
+          </h3>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Priority Fixes */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
+                Priority Fixes
+              </h4>
+              <ul className="space-y-2">
+                {(
+                  analysis.aiRecommendations.combined?.priorityFixes ||
+                  analysis.aiRecommendations.fallback?.priorityFixes ||
+                  []
+                )
+                  .slice(0, 5)
+                  .map((fix: string, index: number) => (
+                    <li
+                      key={index}
+                      className="flex items-start space-x-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg"
+                    >
+                      <span className="text-red-500 font-bold">
+                        {index + 1}.
+                      </span>
+                      <span className="text-red-700 dark:text-red-300 text-sm">
+                        {fix}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+
+            {/* Detailed Recommendations */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                <Lightbulb className="w-4 h-4 mr-2 text-green-500" />
+                Detailed Recommendations
+              </h4>
+              <ul className="space-y-2">
+                {(
+                  analysis.aiRecommendations.combined?.recommendations ||
+                  analysis.aiRecommendations.fallback?.recommendations ||
+                  []
+                )
+                  .slice(0, 5)
+                  .map((rec: string, index: number) => (
+                    <li
+                      key={index}
+                      className="flex items-start space-x-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-green-700 dark:text-green-300 text-sm">
+                        {rec}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
+
+      {/* Similar Sites Comparison */}
+      {analysis.similarSites && analysis.similarSites.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
+        >
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+            <TrendingUp className="w-5 h-5 mr-2" />
+            Comparison with Top Sites
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {analysis.similarSites
+              .slice(0, 3)
+              .map((site: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {site.name}
+                    </h4>
+                    <div
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs font-bold",
+                        site.score >= 90
+                          ? "bg-green-500 text-white"
+                          : site.score >= 80
+                          ? "bg-yellow-500 text-white"
+                          : "bg-blue-500 text-white"
+                      )}
+                    >
+                      {site.score}
+                    </div>
+                  </div>
+                  <ul className="space-y-1">
+                    {site.practices
+                      ?.slice(0, 3)
+                      .map((practice: string, i: number) => (
+                        <li
+                          key={i}
+                          className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-green-500" />
+                          <span>{practice}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Download Report Button */}
+      <div className="text-center">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all mx-auto shadow-lg"
+        >
+          <Download className="w-4 h-4" />
+          <span className="font-semibold">Download Full Report (PDF)</span>
+        </motion.button>
+      </div>
     </div>
   );
 };
 
-export default function DynamicWordPressQAPage() {
+// Main Component
+export default function EnhancedWordPressQAPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("clientId");
@@ -838,17 +595,19 @@ export default function DynamicWordPressQAPage() {
   const [isLocalhost, setIsLocalhost] = useState(false);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [customInstructions, setCustomInstructions] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("configuration");
   const [showWebsitePreview, setShowWebsitePreview] = useState(false);
-  const [problems, setProblems] = useState<any[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const [apiTestResults, setApiTestResults] = useState<any[]>([]);
   const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [showProblemModal, setShowProblemModal] = useState(false);
-  const [selectedProblem, setSelectedProblem] = useState<any>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const {
+    runAnalysis,
+    isRunning,
+    error,
+    data: analysis,
+  } = useWordPressAnalysis();
 
   // Calculate total tests count
   const totalTestsCount = DYNAMIC_QA_FEATURES.reduce(
@@ -865,173 +624,47 @@ export default function DynamicWordPressQAPage() {
     if (mode === "full-check") {
       setSelectedTests(allTests);
     } else if (mode === "quick-check") {
-      // Select first 5 tests from each category for quick check
       const quickTests = DYNAMIC_QA_FEATURES.flatMap((category) =>
-        category.tests.slice(0, 5).map((test) => `${category.id}-${test}`)
+        category.tests.slice(0, 3).map((test) => `${category.id}-${test}`)
       );
       setSelectedTests(quickTests);
     }
   }, [mode]);
 
-  // Take screenshot
-  const takeScreenshot = async () => {
-    if (!iframeRef.current) return;
-
-    try {
-      // Simulate screenshot - in real implementation use html2canvas
-      const canvas = document.createElement("canvas");
-      canvas.width = 800;
-      canvas.height = 600;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#f3f4f6";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#000";
-        ctx.font = "20px Arial";
-        ctx.fillText("Website Screenshot: " + websiteUrl, 50, 50);
-        setScreenshot(canvas.toDataURL());
-      }
-    } catch (error) {
-      console.error("Screenshot failed:", error);
-    }
-  };
-
-  // Handle problem click
-  const handleProblemClick = (problem: any) => {
-    setSelectedProblem(problem);
-    setShowProblemModal(true);
-    takeScreenshot();
-  };
-
-  // Run comprehensive analysis
-  const runWordPressAnalysis = async () => {
+  const handleRunAnalysis = async () => {
     if (!websiteUrl) {
       alert("Please enter a website URL");
       return;
     }
 
-    setIsAnalyzing(true);
-    setActiveTab("analysis");
-    setProblems([]);
-
     try {
-      const response = await fetch("/api/qualifai/wordpress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: websiteUrl,
-          tests: selectedTests,
-          customInstructions,
-          isLocalhost,
-          clientId,
-          mode,
-          uploadedFiles,
-        }),
-      });
+      const request = {
+        url: websiteUrl,
+        tests: selectedTests,
+        customInstructions,
+        isLocalhost,
+        clientId: clientId || undefined,
+        mode,
+        uploadedFiles,
+      };
 
-      if (!response.ok) {
-        throw new Error("Analysis failed");
-      }
-
-      const data = await response.json();
-      setAnalysis(data);
-      setProblems(data.problems || []);
-      setApiTestResults(data.apiTests || []);
+      console.log("Starting analysis with request:", request);
+      await runAnalysis(request);
+      setActiveTab("analysis");
     } catch (error) {
       console.error("Analysis failed:", error);
-      // Fallback to dynamic mock data
-      const mockData = generateDynamicMockAnalysis();
-      setAnalysis(mockData);
-      setProblems(mockData.problems);
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
-  // Generate dynamic mock analysis
-  const generateDynamicMockAnalysis = () => {
-    const insights = DYNAMIC_QA_FEATURES.map((category) => ({
-      category: category.id,
-      score: Math.floor(Math.random() * 30) + 65,
-      issues: [
-        `Found ${Math.floor(Math.random() * 5) + 1} issues in ${category.name}`,
-        `Performance impact detected in ${category.name.toLowerCase()}`,
-        `Optimization needed for ${category.name.toLowerCase()}`,
-      ],
-      recommendations: [
-        `Implement ${category.name} best practices`,
-        `Fix identified ${category.name.toLowerCase()} issues`,
-        `Optimize ${category.name.toLowerCase()} configuration`,
-      ],
-    }));
-
-    const problems = [
-      {
-        type: "performance",
-        message: "Slow page load time affecting user experience",
-        position: { x: 100, y: 200 },
-        severity: "high",
-        fix: "Implement caching and optimize images",
-      },
-      {
-        type: "seo",
-        message: "Missing meta tags reducing search visibility",
-        position: { x: 300, y: 150 },
-        severity: "medium",
-        fix: "Add proper meta descriptions and title tags",
-      },
-      {
-        type: "security",
-        message: "Outdated WordPress version with security risks",
-        position: { x: 200, y: 300 },
-        severity: "critical",
-        fix: "Update WordPress to latest version immediately",
-      },
-      {
-        type: "content",
-        message: "Broken links found on multiple pages",
-        position: { x: 400, y: 250 },
-        severity: "medium",
-        fix: "Fix or remove broken links",
-      },
-    ];
-
-    const totalScore = Math.round(
-      insights.reduce((sum, insight) => sum + insight.score, 0) /
-        insights.length
-    );
-
-    return {
-      score: totalScore,
-      grade:
-        totalScore >= 90
-          ? "A"
-          : totalScore >= 80
-          ? "B"
-          : totalScore >= 70
-          ? "C"
-          : totalScore >= 60
-          ? "D"
-          : "F",
-      summary: `Comprehensive analysis completed with ${selectedTests.length} tests across ${DYNAMIC_QA_FEATURES.length} categories.`,
-      insights,
-      problems,
-      similarSites: [],
-      pluginAnalysis: {
-        totalPlugins: 15,
-        performanceImpact: 5,
-        securityIssues: 2,
-        recommendations: [
-          "Update plugins",
-          "Remove unused plugins",
-          "Configure caching",
-        ],
-      },
-      timestamp: new Date().toISOString(),
-    };
+  const handleProblemClick = (problem: Problem) => {
+    setSelectedProblem(problem);
+    setShowProblemModal(true);
   };
 
-  // Toggle test selection
+  const handleScreenshot = (screenshotData: string) => {
+    setScreenshot(screenshotData);
+  };
+
   const toggleTest = (testId: string) => {
     setSelectedTests((prev) =>
       prev.includes(testId)
@@ -1071,14 +704,14 @@ export default function DynamicWordPressQAPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-4 mb-4">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-2xl"
-            >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="flex items-center justify-center space-x-4 mb-4"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-2xl">
               <Globe className="w-8 h-8 text-white" />
-            </motion.div>
+            </div>
             <div className="text-left">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 WordPress QA Analyzer
@@ -1088,7 +721,7 @@ export default function DynamicWordPressQAPage() {
                 Real-time Results
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Quick Actions */}
           <motion.div
@@ -1107,7 +740,8 @@ export default function DynamicWordPressQAPage() {
             </button>
             <button
               onClick={() => window.open(websiteUrl, "_blank")}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              disabled={!websiteUrl}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               <span>Visit Site</span>
@@ -1115,50 +749,35 @@ export default function DynamicWordPressQAPage() {
           </motion.div>
         </div>
 
-        {/* Website Preview */}
-        {showWebsitePreview && websiteUrl && (
+        {/* Error Display */}
+        {error && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-4 border border-gray-200/50 dark:border-gray-700/50 shadow-lg mb-8"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Live Preview
-              </h3>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={takeScreenshot}
-                  className="flex items-center space-x-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Screenshot</span>
-                </button>
-                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Wifi className="w-4 h-4" />
-                  <span>Live Connection</span>
-                </div>
+            <div className="flex items-center space-x-3">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <div>
+                <h4 className="font-semibold text-red-800 dark:text-red-200">
+                  Analysis Failed
+                </h4>
+                <p className="text-red-700 dark:text-red-300 text-sm">
+                  {error.message}
+                </p>
               </div>
             </div>
-            <div className="relative h-96 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
-              <iframe
-                ref={iframeRef}
-                src={websiteUrl}
-                className="w-full h-full"
-                title="Website Preview"
-                sandbox="allow-same-origin allow-scripts"
-              />
-
-              {/* Problem Indicators */}
-              {problems.map((problem, index) => (
-                <ProblemIndicator
-                  key={index}
-                  problem={problem}
-                  onProblemClick={handleProblemClick}
-                />
-              ))}
-            </div>
           </motion.div>
+        )}
+
+        {/* Website Preview */}
+        {showWebsitePreview && websiteUrl && (
+          <EnhancedWebsitePreview
+            websiteUrl={websiteUrl}
+            problems={analysis?.problems || []}
+            onProblemClick={handleProblemClick}
+            onScreenshot={handleScreenshot}
+          />
         )}
 
         {/* Tabs */}
@@ -1169,8 +788,6 @@ export default function DynamicWordPressQAPage() {
               { id: "upload", name: "Design Files", icon: Upload },
               { id: "api-testing", name: "API Testing", icon: TestTube },
               { id: "analysis", name: "AI Analysis", icon: Bot },
-              { id: "preview", name: "Live Preview", icon: Eye },
-              { id: "report", name: "Report", icon: Download },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1387,18 +1004,35 @@ export default function DynamicWordPressQAPage() {
               {/* Action Button */}
               <div className="text-center">
                 <motion.button
-                  onClick={runWordPressAnalysis}
-                  disabled={!websiteUrl || selectedTests.length === 0}
+                  onClick={handleRunAnalysis}
+                  disabled={
+                    !websiteUrl || selectedTests.length === 0 || isRunning
+                  }
                   className={cn(
                     "flex items-center space-x-3 px-8 py-4 text-white rounded-xl transition-all duration-300 shadow-lg mx-auto hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
                     "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700"
                   )}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: isRunning ? 1 : 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Play className="w-5 h-5" />
+                  {isRunning ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      <RotateCw className="w-5 h-5" />
+                    </motion.div>
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
                   <span className="font-semibold text-lg">
-                    Run Comprehensive Analysis ({selectedTests.length} tests)
+                    {isRunning
+                      ? "Analyzing..."
+                      : `Run Analysis (${selectedTests.length} tests)`}
                   </span>
                 </motion.button>
 
@@ -1418,10 +1052,7 @@ export default function DynamicWordPressQAPage() {
 
           {/* API Testing Tab */}
           {activeTab === "api-testing" && (
-            <APITestingPanel
-              websiteUrl={websiteUrl}
-              onTestComplete={setApiTestResults}
-            />
+            <APITestingPanel websiteUrl={websiteUrl} />
           )}
 
           {/* Analysis Tab */}
@@ -1431,7 +1062,7 @@ export default function DynamicWordPressQAPage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              {isAnalyzing ? (
+              {isRunning ? (
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg text-center">
                   <motion.div
                     animate={{ rotate: 360 }}
@@ -1490,148 +1121,10 @@ export default function DynamicWordPressQAPage() {
                   </div>
                 </div>
               ) : analysis ? (
-                <>
-                  {/* Overall Score */}
-                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          Overall Score
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                          {analysis.summary}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={cn(
-                            "w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-2xl",
-                            analysis.score >= 90
-                              ? "bg-gradient-to-r from-green-500 to-emerald-500"
-                              : analysis.score >= 70
-                              ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                              : "bg-gradient-to-r from-red-500 to-rose-500"
-                          )}
-                        >
-                          {analysis.score}
-                        </motion.div>
-                        <div className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-                          Grade: {analysis.grade}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Category Insights */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {analysis.insights?.map((insight: any, index: number) => {
-                      const category = DYNAMIC_QA_FEATURES.find(
-                        (cat) => cat.id === insight.category
-                      );
-                      return (
-                        <motion.div
-                          key={insight.category}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
-                        >
-                          <div className="flex items-center space-x-3 mb-4">
-                            {category && (
-                              <div
-                                className={cn(
-                                  "p-3 rounded-xl bg-gradient-to-r text-white shadow-lg",
-                                  category.color
-                                )}
-                              >
-                                <category.icon className="w-5 h-5" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 dark:text-white capitalize">
-                                {insight.category}
-                              </h4>
-                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${insight.score}%` }}
-                                  transition={{
-                                    duration: 1,
-                                    delay: index * 0.2,
-                                  }}
-                                  className={cn(
-                                    "h-2 rounded-full transition-all duration-1000",
-                                    insight.score >= 90
-                                      ? "bg-green-500"
-                                      : insight.score >= 70
-                                      ? "bg-yellow-500"
-                                      : "bg-red-500"
-                                  )}
-                                />
-                              </div>
-                            </div>
-                            <div
-                              className={cn(
-                                "px-3 py-1 rounded-full text-sm font-medium",
-                                insight.score >= 90
-                                  ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                                  : insight.score >= 70
-                                  ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                                  : "bg-red-500/20 text-red-600 dark:text-red-400"
-                              )}
-                            >
-                              {insight.score}%
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div>
-                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                                <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
-                                Issues Found ({insight.issues.length})
-                              </h5>
-                              <ul className="space-y-2">
-                                {insight.issues
-                                  .slice(0, 3)
-                                  .map((issue: string, i: number) => (
-                                    <li
-                                      key={i}
-                                      className="flex items-start space-x-2 text-sm text-red-600 dark:text-red-400"
-                                    >
-                                      <Bug className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                      <span>{issue}</span>
-                                    </li>
-                                  ))}
-                              </ul>
-                            </div>
-
-                            <div>
-                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                                <Sparkles className="w-4 h-4 mr-2 text-green-500" />
-                                Recommendations
-                              </h5>
-                              <ul className="space-y-2">
-                                {insight.recommendations
-                                  .slice(0, 3)
-                                  .map((rec: string, i: number) => (
-                                    <li
-                                      key={i}
-                                      className="flex items-start space-x-2 text-sm text-green-600 dark:text-green-400"
-                                    >
-                                      <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                      <span>{rec}</span>
-                                    </li>
-                                  ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </>
+                <AnalysisResults
+                  analysis={analysis}
+                  onProblemClick={handleProblemClick}
+                />
               ) : (
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg text-center">
                   <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1650,111 +1143,14 @@ export default function DynamicWordPressQAPage() {
           )}
         </AnimatePresence>
 
-        {/* Problem Detail Modal */}
-        <AnimatePresence>
-          {showProblemModal && selectedProblem && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowProblemModal(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Problem Details
-                  </h3>
-                  <button
-                    onClick={() => setShowProblemModal(false)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white capitalize">
-                      {selectedProblem.type} Issue
-                    </h4>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">
-                      {selectedProblem.message}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
-                      Severity
-                    </h4>
-                    <span
-                      className={cn(
-                        "px-2 py-1 rounded text-sm font-medium",
-                        selectedProblem.severity === "critical"
-                          ? "bg-red-100 text-red-800"
-                          : selectedProblem.severity === "high"
-                          ? "bg-orange-100 text-orange-800"
-                          : selectedProblem.severity === "medium"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-blue-100 text-blue-800"
-                      )}
-                    >
-                      {selectedProblem.severity}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
-                      Recommended Fix
-                    </h4>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">
-                      {selectedProblem.fix}
-                    </p>
-                  </div>
-
-                  {screenshot && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        Screenshot Reference
-                      </h4>
-                      <img
-                        src={screenshot}
-                        alt="Problem reference"
-                        className="rounded-lg border border-gray-300 dark:border-gray-600 max-w-full"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      onClick={() => {
-                        setProblems((prev) =>
-                          prev.filter((p) => p !== selectedProblem)
-                        );
-                        setShowProblemModal(false);
-                      }}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                    >
-                      Mark as Fixed
-                    </button>
-                    <button
-                      onClick={() => setShowProblemModal(false)}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Problem Modal */}
+        <ProblemModal
+          problem={selectedProblem}
+          isOpen={showProblemModal}
+          onClose={() => setShowProblemModal(false)}
+          screenshot={screenshot}
+          websiteUrl={websiteUrl}
+        />
       </div>
     </div>
   );

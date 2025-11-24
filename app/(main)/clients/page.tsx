@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useClients } from "@/app/(main)/lib/hooks/useClients";
+import { useClients } from "@/app/(main)/hooks/useClients";
 import { ClientCard } from "@/app/components/clients/ClientCard";
 import { ClientForm } from "@/app/components/clients/ClientForm";
 import { StatusBadge } from "@/app/components/clients/StatusBadge";
