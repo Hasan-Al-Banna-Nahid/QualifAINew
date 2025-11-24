@@ -39,7 +39,12 @@ const SERVICE_OPTIONS = [
   { value: "nodejs", label: "Node.js" },
 ];
 
+import { useRouter } from "next/navigation";
+import { ClientFormSchema } from "@/app/(main)/schemas/client.schema";
+import { ServiceType } from "@/app/(main)/types/client.types";
+
 export default function ClientsPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState({
     search: "",
     status: "all",
@@ -71,16 +76,16 @@ export default function ClientsPage() {
     data: ClientFormSchema & { initialServices: ServiceType[] }
   ) => {
     try {
-      const result = await clientService.createClient(data);
+      const result = await createClient(data);
 
       // If there's a service to configure after creation
-      if (result.id && selectedServiceForConfig) {
+      if (result?.id && data.initialServices.length > 0) {
         // Redirect to the service configuration page
         router.push(
-          `/qualifai/${selectedServiceForConfig}?clientId=${result.id}&mode=configure`
+          `/qualifai/${data.initialServices[0]}?clientId=${result.id}&mode=configure`
         );
       } else {
-        onClose(); // Just close the form
+        setShowForm(false); // Just close the form
       }
     } catch (error) {
       console.error("Failed to create client:", error);
