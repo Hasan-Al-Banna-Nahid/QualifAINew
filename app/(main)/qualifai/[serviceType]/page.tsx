@@ -4,11 +4,11 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { ServiceType } from "@/app/(main)/types/client.types";
 import WordPressQAPage from "@/app/(main)/qualifai/wordpress/page";
-// import PPCQAPage from "@/app/(main)/ppc/page";
-// import SEOQAPage from "@/app/(main)/seo/page";
+import PPCQAPage from "@/app/(main)/qualifai/ppc/page";
+import SEOQAPage from "@/app/(main)/qualifai/seo/page";
 import AIAutomationQAPage from "@/app/(main)/qualifai/ai-automation/page";
-// import ContentQAPage from "@/app/(main)/content/page";
-// import SocialMediaQAPage from "@/app/(main)/social-media/page";
+import ContentQAPage from "@/app/(main)/qualifai/content/page";
+import SocialMediaQAPage from "@/app/(main)/qualifai/social-media/page";
 
 export default function ServicePage() {
   const params = useParams();
@@ -21,17 +21,17 @@ export default function ServicePage() {
   const renderServicePage = () => {
     switch (serviceType) {
       case "wordpress":
-        return <WordPressQAPage clientId={clientId} mode={mode} />;
+        return <WordPressQAPage />;
       case "ppc":
-      // return <PPCQAPage clientId={clientId} mode={mode} />;
+        return <PPCQAPage />;
       case "seo":
-      // return <SEOQAPage clientId={clientId} mode={mode} />;
+        return <SEOQAPage />;
       case "ai-automation":
-        return <AIAutomationQAPage clientId={clientId} mode={mode} />;
+        return <AIAutomationQAPage />;
       case "content":
-      // return <ContentQAPage clientId={clientId} mode={mode} />;
+        return <ContentQAPage />;
       case "social-media":
-      // return <SocialMediaQAPage clientId={clientId} mode={mode} />;
+        return <SocialMediaQAPage />;
       default:
         return <div>Service not found</div>;
     }

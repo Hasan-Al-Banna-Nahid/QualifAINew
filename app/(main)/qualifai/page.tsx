@@ -115,10 +115,20 @@ const SERVICE_APPS = [
   },
 ];
 
+import { useClients } from "@/app/(main)/hooks/useClients";
+
 export default function QualifAIDashboard() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const { stats } = useClients({
+    search: "",
+    status: "all",
+    serviceType: "all",
+    page: 1,
+    limit: 1,
+  });
 
   const filteredApps = SERVICE_APPS.filter(
     (app) =>
@@ -171,25 +181,25 @@ export default function QualifAIDashboard() {
           {[
             {
               label: "Active Projects",
-              value: "24",
-              change: "+5",
+              value: stats?.activeClients || 0,
+              change: "+5", // This would ideally come from historical data
               icon: Users,
             },
             {
               label: "QA Runs Today",
-              value: "18",
+              value: stats?.totalQARuns || 0,
               change: "+3",
               icon: BarChart3,
             },
             {
               label: "Issues Found",
-              value: "42",
+              value: 42, // Placeholder as criticalIssues is not in stats type yet
               change: "-12",
               icon: AlertTriangle,
             },
             {
               label: "Scope Coverage",
-              value: "87%",
+              value: `${stats?.averageQAScore ? Math.round(stats.averageQAScore) : 0}%`,
               change: "+8%",
               icon: Clock,
             },

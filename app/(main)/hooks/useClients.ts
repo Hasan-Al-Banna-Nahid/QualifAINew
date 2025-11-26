@@ -88,8 +88,7 @@ export const useClients = (filter: ClientsFilter) => {
       // Show analysis summary
       setTimeout(() => {
         toast.success(
-          `Priority: ${analysis.priority.toUpperCase()} | Sentiment: ${
-            analysis.sentiment
+          `Priority: ${analysis.priority.toUpperCase()} | Sentiment: ${analysis.sentiment
           }`,
           {
             duration: 6000,

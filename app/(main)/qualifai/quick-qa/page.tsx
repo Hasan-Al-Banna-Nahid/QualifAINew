@@ -28,6 +28,7 @@ import {
   ServiceType,
 } from "@/app/(main)/types/client.types";
 import { ServiceConfiguration } from "@/app/components/services/ServiceConfiguration";
+import { ClientSelector } from "@/app/components/qualifai/ClientSelector";
 import { motion } from "framer-motion";
 
 const SERVICE_CONFIG = {
@@ -572,26 +573,67 @@ export default function QuickQAPage() {
             </motion.div>
           )}
 
-        {/* No Client Selected State */}
+        {/* No Client Selected State - Enhanced with Client Selection */}
         {!clientId && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+            className="max-w-4xl mx-auto"
           >
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Client Selected
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Please select a client to run Quick QA
-            </p>
-            <button
-              onClick={() => router.push("/clients")}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:-translate-y-1"
-            >
-              Browse Clients
-            </button>
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+              <div className="text-center mb-8">
+                <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Quick QA - Standalone Mode
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Select a client to run quick quality assurance checks
+                </p>
+              </div>
+
+              <ClientSelector onSelect={(id) => router.push(`/qualifai/quick-qa?clientId=${id}`)} />
+
+              <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+                  What is Quick QA?
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Play className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-1">
+                      Fast & Efficient
+                    </h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Run comprehensive QA across multiple services in minutes
+                    </p>
+                  </div>
+                  <div className="text-center p-4">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-1">
+                      Automated Checks
+                    </h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Automated testing for WordPress, SEO, PPC, and more
+                    </p>
+                  </div>
+                  <div className="text-center p-4">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BarChart3 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-1">
+                      Instant Results
+                    </h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Get detailed reports and actionable insights immediately
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
 
