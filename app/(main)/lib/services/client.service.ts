@@ -763,7 +763,7 @@ export const clientService = {
       snapshot.forEach((doc) => {
         const client = doc.data() as Client;
         stats.total++;
-        stats.revenue += this.calculateRevenue(client);
+        stats.revenue += clientService.calculateRevenue(client);
 
         // Count by status
         stats.byStatus[client.status] =
@@ -920,8 +920,8 @@ export const clientService = {
         successRate:
           typeServices.length > 0
             ? (typeServices.filter((s) => (s.qaScore || 0) >= 80).length /
-                typeServices.length) *
-              100
+              typeServices.length) *
+            100
             : 0,
       };
     } catch (error) {
