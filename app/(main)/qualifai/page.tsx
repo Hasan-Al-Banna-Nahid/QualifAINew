@@ -115,7 +115,7 @@ const SERVICE_APPS = [
   },
 ];
 
-import { useClients } from "@/app/(main)/lib/hooks/useClients";
+import { useClients } from "@/app/(main)/hooks/useClients";
 
 export default function QualifAIDashboard() {
   const router = useRouter();

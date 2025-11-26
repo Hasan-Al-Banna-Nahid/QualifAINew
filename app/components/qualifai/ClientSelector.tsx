@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Search, ChevronDown, Building2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useClients } from "@/app/(main)/lib/hooks/useClients";
+import { useClients } from "@/app/(main)/hooks/useClients";
 import { Client } from "@/app/(main)/types/client.types";
 import { cn } from "@/lib/utils";
 
