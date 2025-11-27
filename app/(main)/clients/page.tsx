@@ -61,6 +61,7 @@ export default function ClientsPage() {
     total,
     isLoading,
     createClient,
+    createClientAsync,
     updateClient,
     deleteClient,
     isCreating,
@@ -76,7 +77,7 @@ export default function ClientsPage() {
     data: ClientFormSchema & { initialServices: ServiceType[] }
   ) => {
     try {
-      const result = await createClient(data);
+      const result = await createClientAsync(data);
 
       // If there's a service to configure after creation
       if (result?.id && data.initialServices.length > 0) {
@@ -92,10 +93,13 @@ export default function ClientsPage() {
     }
   };
 
-  const handleUpdateClient = async (data: ClientFormData) => {
+  const handleUpdateClient = async (
+    data: ClientFormSchema & { initialServices: ServiceType[] }
+  ) => {
     if (editingClient) {
       await updateClient({ id: editingClient.id, data });
       setEditingClient(null);
+      setShowForm(false);
     }
   };
 
@@ -391,6 +395,7 @@ export default function ClientsPage() {
               setShowForm(false);
               setEditingClient(null);
             }}
+            onDelete={handleDeleteClient}
             isSubmitting={isCreating || isUpdating}
           />
         )}

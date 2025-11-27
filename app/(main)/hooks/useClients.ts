@@ -109,10 +109,10 @@ export const useClients = (filter: ClientsFilter) => {
       ids: string[];
       status: Client["status"];
     }) => clientService.bulkUpdateStatus(ids, status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["client-stats"] });
-      toast.success(`Updated ${ids.length} clients`);
+      toast.success(`Updated ${variables.ids.length} clients`);
     },
   });
 
@@ -129,8 +129,7 @@ export const useClients = (filter: ClientsFilter) => {
       (client) =>
         client.name.toLowerCase().includes(searchLower) ||
         client.company.toLowerCase().includes(searchLower) ||
-        client.email.toLowerCase().includes(searchLower) ||
-        client.industry.toLowerCase().includes(searchLower)
+        client.email.toLowerCase().includes(searchLower)
     );
   };
 
@@ -147,6 +146,7 @@ export const useClients = (filter: ClientsFilter) => {
 
     // Mutations
     createClient: createClientMutation.mutate,
+    createClientAsync: createClientMutation.mutateAsync,
     updateClient: updateClientMutation.mutate,
     deleteClient: deleteClientMutation.mutate,
     analyzeClient: analyzeClientMutation.mutate,

@@ -1,7 +1,7 @@
 // components/services/ServiceConfiguration.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -78,11 +78,49 @@ export function ServiceConfiguration({
   const [activeTab, setActiveTab] = useState("credentials");
   const [formData, setFormData] = useState<any>({});
 
+  // Load existing service configuration when modal opens
+  useEffect(() => {
+    const existingService = client.detailedServices?.find(
+      (s) => s.type === serviceType
+    );
+    
+    if (existingService) {
+      setFormData({
+        credentials: existingService.credentials || {},
+        configuration: existingService.configuration || {},
+      });
+    }
+  }, [client, serviceType]);
+
   const updateFormData = (key: string, value: any) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFormData((prev: any) => {
+      // Handle nested keys like "configuration.seo"
+      if (key.includes('.')) {
+        const keys = key.split('.');
+        const newData = { ...prev };
+        let current = newData;
+        
+        // Navigate to the nested object
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) {
+            current[keys[i]] = {};
+          } else {
+            current[keys[i]] = { ...current[keys[i]] };
+          }
+          current = current[keys[i]];
+        }
+        
+        // Set the final value
+        current[keys[keys.length - 1]] = value;
+        return newData;
+      }
+      
+      // Handle flat keys
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
   };
 
   const handleSave = () => {
@@ -559,12 +597,11 @@ function TestingTab({ serviceType, client, onRunQA }: any) {
 
 // Service-specific configuration components
 function WordPressConfiguration({ config, updateConfig }: any) {
-  const defaultConfig = {
+  const currentConfig = config || {
     theme: "",
     plugins: [],
     performance: { caching: false, cdn: false, imageOptimization: false },
     security: { ssl: false, firewall: false, backups: false },
-    ...config,
   };
 
   return (
@@ -576,12 +613,12 @@ function WordPressConfiguration({ config, updateConfig }: any) {
           </label>
           <input
             type="text"
-            value={defaultConfig.theme}
+            value={currentConfig.theme || ""}
             onChange={(e) =>
-              updateConfig({ ...defaultConfig, theme: e.target.value })
+              updateConfig({ ...currentConfig, theme: e.target.value })
             }
             placeholder="e.g., Astra, Divi, GeneratePress"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
           />
         </div>
 
@@ -591,15 +628,15 @@ function WordPressConfiguration({ config, updateConfig }: any) {
           </label>
           <input
             type="text"
-            value={defaultConfig.plugins.join(", ")}
+            value={(currentConfig.plugins || []).join(", ")}
             onChange={(e) =>
               updateConfig({
-                ...defaultConfig,
-                plugins: e.target.value.split(", "),
+                ...currentConfig,
+                plugins: e.target.value ? e.target.value.split(", ") : [],
               })
             }
             placeholder="e.g., Yoast SEO, WooCommerce, Elementor"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
           />
         </div>
       </div>
@@ -617,12 +654,12 @@ function WordPressConfiguration({ config, updateConfig }: any) {
             <label key={item.key} className="flex items-center space-x-3">
               <input
                 type="checkbox"
-                checked={defaultConfig.performance[item.key]}
+                checked={currentConfig.performance[item.key]}
                 onChange={(e) =>
                   updateConfig({
-                    ...defaultConfig,
+                    ...currentConfig,
                     performance: {
-                      ...defaultConfig.performance,
+                      ...currentConfig.performance,
                       [item.key]: e.target.checked,
                     },
                   })
@@ -650,12 +687,12 @@ function WordPressConfiguration({ config, updateConfig }: any) {
             <label key={item.key} className="flex items-center space-x-3">
               <input
                 type="checkbox"
-                checked={defaultConfig.security[item.key]}
+                checked={currentConfig.security[item.key]}
                 onChange={(e) =>
                   updateConfig({
-                    ...defaultConfig,
+                    ...currentConfig,
                     security: {
-                      ...defaultConfig.security,
+                      ...currentConfig.security,
                       [item.key]: e.target.checked,
                     },
                   })
@@ -674,12 +711,11 @@ function WordPressConfiguration({ config, updateConfig }: any) {
 }
 
 function AIAutomationConfiguration({ config, updateConfig }: any) {
-  const defaultConfig = {
+  const currentConfig = config || {
     workflowTesting: true,
     dataValidation: true,
     errorHandling: true,
     performanceMonitoring: true,
-    ...config,
   };
 
   return (
@@ -718,9 +754,9 @@ function AIAutomationConfiguration({ config, updateConfig }: any) {
           >
             <input
               type="checkbox"
-              checked={defaultConfig[item.key]}
+              checked={currentConfig[item.key]}
               onChange={(e) =>
-                updateConfig({ ...defaultConfig, [item.key]: e.target.checked })
+                updateConfig({ ...currentConfig, [item.key]: e.target.checked })
               }
               className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
@@ -753,12 +789,11 @@ function AIAutomationConfiguration({ config, updateConfig }: any) {
 
 // Add similar configuration components for PPC, SEO, Content, and Social Media...
 function PPCConfiguration({ config, updateConfig }: any) {
-  const defaultConfig = {
+  const currentConfig = config || {
     dailyBudget: 0,
     targetAudience: [],
     adFormats: [],
     conversionTracking: false,
-    ...config,
   };
 
   return (
@@ -770,10 +805,10 @@ function PPCConfiguration({ config, updateConfig }: any) {
           </label>
           <input
             type="number"
-            value={defaultConfig.dailyBudget}
+            value={currentConfig.dailyBudget}
             onChange={(e) =>
               updateConfig({
-                ...defaultConfig,
+                ...currentConfig,
                 dailyBudget: Number(e.target.value),
               })
             }
@@ -787,10 +822,10 @@ function PPCConfiguration({ config, updateConfig }: any) {
           </label>
           <input
             type="text"
-            value={defaultConfig.targetAudience.join(", ")}
+            value={currentConfig.targetAudience.join(", ")}
             onChange={(e) =>
               updateConfig({
-                ...defaultConfig,
+                ...currentConfig,
                 targetAudience: e.target.value.split(", "),
               })
             }
@@ -809,14 +844,14 @@ function PPCConfiguration({ config, updateConfig }: any) {
             <label key={format} className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                checked={defaultConfig.adFormats.includes(format.toLowerCase())}
+                checked={currentConfig.adFormats.includes(format.toLowerCase())}
                 onChange={(e) => {
                   const formats = e.target.checked
-                    ? [...defaultConfig.adFormats, format.toLowerCase()]
-                    : defaultConfig.adFormats.filter(
+                    ? [...currentConfig.adFormats, format.toLowerCase()]
+                    : currentConfig.adFormats.filter(
                         (f: string) => f !== format.toLowerCase()
                       );
-                  updateConfig({ ...defaultConfig, adFormats: formats });
+                  updateConfig({ ...currentConfig, adFormats: formats });
                 }}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
@@ -831,10 +866,10 @@ function PPCConfiguration({ config, updateConfig }: any) {
       <label className="flex items-center space-x-3">
         <input
           type="checkbox"
-          checked={defaultConfig.conversionTracking}
+          checked={currentConfig.conversionTracking}
           onChange={(e) =>
             updateConfig({
-              ...defaultConfig,
+              ...currentConfig,
               conversionTracking: e.target.checked,
             })
           }
@@ -849,14 +884,6 @@ function PPCConfiguration({ config, updateConfig }: any) {
 }
 
 function SEOConfiguration({ config, updateConfig }: any) {
-  const defaultConfig = {
-    targetKeywords: [],
-    competitorUrls: [],
-    localSeo: false,
-    technicalSeo: true,
-    ...config,
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -865,15 +892,15 @@ function SEOConfiguration({ config, updateConfig }: any) {
         </label>
         <input
           type="text"
-          value={defaultConfig.targetKeywords.join(", ")}
+          value={((config?.targetKeywords || []).join(", "))}
           onChange={(e) =>
             updateConfig({
-              ...defaultConfig,
-              targetKeywords: e.target.value.split(", "),
+              ...(config || {}),
+              targetKeywords: e.target.value ? e.target.value.split(", ").filter(k => k.trim()) : [],
             })
           }
           placeholder="e.g., digital marketing, web development, seo services"
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
         />
       </div>
 
@@ -883,15 +910,15 @@ function SEOConfiguration({ config, updateConfig }: any) {
         </label>
         <input
           type="text"
-          value={defaultConfig.competitorUrls.join(", ")}
+          value={((config?.competitorUrls || []).join(", "))}
           onChange={(e) =>
             updateConfig({
-              ...defaultConfig,
-              competitorUrls: e.target.value.split(", "),
+              ...(config || {}),
+              competitorUrls: e.target.value ? e.target.value.split(", ").filter(u => u.trim()) : [],
             })
           }
           placeholder="e.g., https://competitor1.com, https://competitor2.com"
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
         />
       </div>
 
@@ -899,9 +926,9 @@ function SEOConfiguration({ config, updateConfig }: any) {
         <label className="flex items-center space-x-3">
           <input
             type="checkbox"
-            checked={defaultConfig.localSeo}
+            checked={config?.localSeo || false}
             onChange={(e) =>
-              updateConfig({ ...defaultConfig, localSeo: e.target.checked })
+              updateConfig({ ...(config || {}), localSeo: e.target.checked })
             }
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
@@ -913,9 +940,9 @@ function SEOConfiguration({ config, updateConfig }: any) {
         <label className="flex items-center space-x-3">
           <input
             type="checkbox"
-            checked={defaultConfig.technicalSeo}
+            checked={config?.technicalSeo !== false}
             onChange={(e) =>
-              updateConfig({ ...defaultConfig, technicalSeo: e.target.checked })
+              updateConfig({ ...(config || {}), technicalSeo: e.target.checked })
             }
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
@@ -928,4 +955,216 @@ function SEOConfiguration({ config, updateConfig }: any) {
   );
 }
 
-// Add ContentConfiguration and SocialMediaConfiguration similarly...
+// Content Configuration Component
+function ContentConfiguration({ config, updateConfig }: any) {
+  const currentConfig = config || {
+    contentType: "blog",
+    tone: "professional",
+    seoOptimization: true,
+    grammarCheck: true,
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Content Type
+          </label>
+          <select
+            value={currentConfig.contentType}
+            onChange={(e) =>
+              updateConfig({ ...currentConfig, contentType: e.target.value })
+            }
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
+          >
+            <option value="blog">Blog Post</option>
+            <option value="product">Product Description</option>
+            <option value="landing-page">Landing Page</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Tone
+          </label>
+          <select
+            value={currentConfig.tone}
+            onChange={(e) =>
+              updateConfig({ ...currentConfig, tone: e.target.value })
+            }
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
+          >
+            <option value="professional">Professional</option>
+            <option value="casual">Casual</option>
+            <option value="technical">Technical</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={currentConfig.seoOptimization}
+            onChange={(e) =>
+              updateConfig({
+                ...currentConfig,
+                seoOptimization: e.target.checked,
+              })
+            }
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            SEO Optimization
+          </span>
+        </label>
+
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={currentConfig.grammarCheck}
+            onChange={(e) =>
+              updateConfig({ ...currentConfig, grammarCheck: e.target.checked })
+            }
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Grammar & Spell Check
+          </span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+// Social Media Configuration Component
+function SocialMediaConfiguration({ config, updateConfig }: any) {
+  const currentConfig = config || {
+    platforms: {
+      facebook: { pageId: "", autoPost: false },
+      twitter: { handle: "", autoTweet: false },
+      linkedin: { companyId: "", autoPost: false },
+      instagram: { accountId: "", autoPost: false },
+    },
+    scheduling: false,
+    analytics: true,
+  };
+
+  return (
+    <div className="space-y-6">
+      <h4 className="font-medium text-gray-900 dark:text-white">
+        Platform Configuration
+      </h4>
+
+      <div className="space-y-4">
+        {Object.entries(currentConfig.platforms).map(([platform, settings]: [string, any]) => (
+          <div
+            key={platform}
+            className="p-4 border border-gray-200 dark:border-gray-600 rounded-xl"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="font-medium text-gray-900 dark:text-white capitalize">
+                {platform}
+              </h5>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={settings.autoPost || settings.autoTweet}
+                  onChange={(e) =>
+                    updateConfig({
+                      ...currentConfig,
+                      platforms: {
+                        ...currentConfig.platforms,
+                        [platform]: {
+                          ...settings,
+                          [platform === "twitter" ? "autoTweet" : "autoPost"]:
+                            e.target.checked,
+                        },
+                      },
+                    })
+                  }
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Auto-post
+                </span>
+              </label>
+            </div>
+
+            <input
+              type="text"
+              value={
+                settings.pageId ||
+                settings.handle ||
+                settings.companyId ||
+                settings.accountId ||
+                ""
+              }
+              onChange={(e) => {
+                const key =
+                  platform === "facebook"
+                    ? "pageId"
+                    : platform === "twitter"
+                    ? "handle"
+                    : platform === "linkedin"
+                    ? "companyId"
+                    : "accountId";
+                updateConfig({
+                  ...currentConfig,
+                  platforms: {
+                    ...currentConfig.platforms,
+                    [platform]: {
+                      ...settings,
+                      [key]: e.target.value,
+                    },
+                  },
+                });
+              }}
+              placeholder={`Enter ${
+                platform === "facebook"
+                  ? "Page ID"
+                  : platform === "twitter"
+                  ? "Handle"
+                  : platform === "linkedin"
+                  ? "Company ID"
+                  : "Account ID"
+              }`}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={currentConfig.scheduling}
+            onChange={(e) =>
+              updateConfig({ ...currentConfig, scheduling: e.target.checked })
+            }
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Post Scheduling
+          </span>
+        </label>
+
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={currentConfig.analytics}
+            onChange={(e) =>
+              updateConfig({ ...currentConfig, analytics: e.target.checked })
+            }
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Analytics Tracking
+          </span>
+        </label>
+      </div>
+    </div>
+  );
+}

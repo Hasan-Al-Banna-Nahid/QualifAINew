@@ -19,6 +19,7 @@ import {
   FiCpu,
   FiFileText,
   FiShare2,
+  FiTrash2,
 } from "react-icons/fi";
 import { CiPalette } from "react-icons/ci";
 import { useState } from "react";
@@ -30,6 +31,7 @@ interface ClientFormProps {
     data: ClientFormSchema & { initialServices: ServiceType[] }
   ) => void;
   onClose: () => void;
+  onDelete?: (client: Client) => void;
   isSubmitting: boolean;
 }
 
@@ -113,6 +115,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   client,
   onSubmit,
   onClose,
+  onDelete,
   isSubmitting,
 }) => {
   const router = useRouter();
@@ -505,34 +508,58 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={cn(
-                  "px-6 py-3 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  isSubmitting ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-                )}
-                onClick={() => {
-                  // If we have a post-creation action and this is a new client
-                  if (!client && selectedServiceForConfig) {
-                    // This will be handled after successful submission
-                  }
-                }}
-              >
-                {isSubmitting
-                  ? "Saving..."
-                  : client
-                  ? "Update Client"
-                  : "Create Client"}
-              </button>
+            <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
+              {/* Delete button - only show for existing clients */}
+              {client && onDelete && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${client.name}?`)) {
+                      onDelete(client);
+                      onClose();
+                    }
+                  }}
+                  className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
+                >
+                  <FiTrash2 className="w-4 h-4" />
+                  <span>Delete Client</span>
+                </motion.button>
+              )}
+              
+              {/* Spacer for when there's no delete button */}
+              {(!client || !onDelete) && <div />}
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "px-6 py-3 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                    isSubmitting ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                  )}
+                  onClick={() => {
+                    // If we have a post-creation action and this is a new client
+                    if (!client && selectedServiceForConfig) {
+                      // This will be handled after successful submission
+                    }
+                  }}
+                >
+                  {isSubmitting
+                    ? "Saving..."
+                    : client
+                    ? "Update Client"
+                    : "Create Client"}
+                </button>
+              </div>
             </div>
           </form>
         </motion.div>

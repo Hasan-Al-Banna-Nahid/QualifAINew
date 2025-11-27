@@ -142,32 +142,49 @@ export default function QuickQAPage() {
     try {
       const totalServices = selectedServices.length;
       let completedServices = 0;
+      const qaResults: any[] = [];
 
       for (const serviceType of selectedServices) {
         try {
           // Run basic QA for each service type
-          await clientService.runServiceQA(
+          const result = await clientService.runServiceQA(
             client.id,
             serviceType as ServiceType,
             []
           );
+          qaResults.push({
+            serviceType,
+            status: 'completed',
+            result,
+          });
           completedServices++;
           setProgress((completedServices / totalServices) * 100);
           // Add a small delay to show progress
           await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`QA failed for ${serviceType}:`, error);
+          qaResults.push({
+            serviceType,
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
           completedServices++;
           setProgress((completedServices / totalServices) * 100);
         }
       }
 
-      // Redirect to dashboard with success message
-      router.push(
-        `/qualifai/dashboard?clientId=${client.id}&quickQA=completed&services=${selectedServices.length}`
-      );
+      // Store results in sessionStorage and redirect to results page
+      sessionStorage.setItem('qaResults', JSON.stringify({
+        clientId: client.id,
+        clientName: client.company,
+        results: qaResults,
+        timestamp: new Date().toISOString(),
+      }));
+      
+      router.push(`/qualifai/qa-results?clientId=${client.id}`);
     } catch (error) {
       console.error("Quick QA failed:", error);
+      alert("Quick QA failed. Please check the console for details.");
     } finally {
       setIsRunning(false);
       setProgress(0);
@@ -175,11 +192,24 @@ export default function QuickQAPage() {
   };
 
   // In your Quick QA page, update the service configuration section
-  const handleServiceConfigure = (serviceType: ServiceType) => {
-    if (client) {
-      router.push(
-        `/qualifai/${serviceType}?clientId=${client.id}&mode=configure`
+  const handleServiceConfigure = async (configData: any) => {
+    if (!client) return;
+    
+    try {
+      // Save the service configuration to the database
+      await clientService.updateServiceConfiguration(
+        client.id,
+        configData.type,
+        configData.credentials,
+        configData.configuration
       );
+      
+      // Reload client data to show updated configuration
+      await loadClientData();
+      
+      console.log("Service configuration saved successfully");
+    } catch (error) {
+      console.error("Failed to save service configuration:", error);
     }
   };
 

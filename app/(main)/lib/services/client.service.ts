@@ -290,13 +290,58 @@ export const clientService = {
   },
 
   // O(1) Update client
-  async updateClient(id: string, data: Partial<ClientFormData>): Promise<void> {
+  async updateClient(
+    id: string,
+    data: Partial<ClientFormData> & { initialServices?: string[] }
+  ): Promise<void> {
     try {
       const docRef = doc(db, CLIENTS_COLLECTION, id);
-      await updateDoc(docRef, {
-        ...data,
-        updatedAt: serverTimestamp(),
-      });
+
+      // If initialServices is provided, update the services
+      if (data.initialServices !== undefined) {
+        const currentClient = await this.getClient(id);
+        if (currentClient) {
+          const currentServiceTypes = currentClient.services.map((s) => s.type);
+          const newServiceTypes = data.initialServices;
+
+          // Find services to add
+          const servicesToAdd = newServiceTypes.filter(
+            (type) => !currentServiceTypes.includes(type)
+          );
+
+          // Find services to remove
+          const servicesToRemove = currentServiceTypes.filter(
+            (type) => !newServiceTypes.includes(type)
+          );
+
+          // Add new services
+          for (const serviceType of servicesToAdd) {
+            await this.addClientService(id, serviceType);
+          }
+
+          // Remove old services
+          for (const serviceType of servicesToRemove) {
+            const serviceId = `${id}-${serviceType}`;
+            await this.removeClientService(id, serviceId);
+          }
+
+          // Get updated services list
+          const updatedServices = await this.getClientServices(id);
+
+          // Update client document with new services array
+          await updateDoc(docRef, {
+            ...data,
+            services: updatedServices,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } else {
+        // No service updates, just update other fields
+        await updateDoc(docRef, {
+          ...data,
+          updatedAt: serverTimestamp(),
+        });
+      }
     } catch (error: any) {
       console.error("Error updating client:", error);
       throw new Error(`Failed to update client: ${error.message}`);
@@ -345,17 +390,29 @@ export const clientService = {
         type: serviceType as any,
         name: getServiceName(serviceType),
         status: "active",
-        credentials,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      await setDoc(serviceRef, {
+      // Only add credentials if they are provided
+      if (credentials !== undefined) {
+        service.credentials = credentials;
+      }
+
+      // Build the document data, excluding undefined values
+      const serviceDocData: any = {
         ...service,
         clientId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      // Only add credentials to Firestore if they exist
+      if (credentials !== undefined) {
+        serviceDocData.credentials = credentials;
+      }
+
+      await setDoc(serviceRef, serviceDocData);
 
       // Update client's services array
       const clientRef = doc(db, CLIENTS_COLLECTION, clientId);
@@ -429,6 +486,57 @@ export const clientService = {
     } catch (error: any) {
       console.error("Error updating service status:", error);
       throw new Error(`Failed to update service status: ${error.message}`);
+    }
+  },
+
+  // Update service configuration (credentials and settings)
+  async updateServiceConfiguration(
+    clientId: string,
+    serviceType: ServiceType,
+    credentials?: any,
+    configuration?: any
+  ): Promise<void> {
+    try {
+      const serviceId = `${clientId}-${serviceType}`;
+      const serviceRef = doc(db, CLIENT_SERVICES_COLLECTION, serviceId);
+
+      // Build update data, excluding undefined values
+      const updateData: any = {
+        updatedAt: serverTimestamp(),
+      };
+
+      if (credentials !== undefined) {
+        updateData.credentials = credentials;
+      }
+
+      if (configuration !== undefined) {
+        updateData.configuration = configuration;
+      }
+
+      await updateDoc(serviceRef, updateData);
+
+      // Also update in client's services array
+      const clientRef = doc(db, CLIENTS_COLLECTION, clientId);
+      const client = await this.getClient(clientId);
+      if (client) {
+        const updatedServices = client.services.map((service) =>
+          service.id === serviceId
+            ? {
+              ...service,
+              ...(credentials !== undefined && { credentials }),
+              ...(configuration !== undefined && { configuration }),
+            }
+            : service
+        );
+
+        await updateDoc(clientRef, {
+          services: updatedServices,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch (error: any) {
+      console.error("Error updating service configuration:", error);
+      throw new Error(`Failed to update service configuration: ${error.message}`);
     }
   },
 
@@ -531,29 +639,35 @@ export const clientService = {
       try {
         switch (serviceType) {
           case "wordpress":
-            if (!service.credentials?.value)
-              throw new Error("Website URL required");
+            const wpUrl = service.credentials?.url || service.credentials?.wpAdminUrl;
+            if (!wpUrl)
+              throw new Error("Website URL required. Please configure the service first.");
             results = await qualifAIService.runWordPressQA(
-              service.credentials.value,
+              wpUrl,
               requirements
             );
             break;
           case "seo":
-            if (!service.credentials?.value)
-              throw new Error("Website URL required");
-            results = await qualifAIService.runSEOQA(
-              service.credentials.value,
+            const seoUrl = service.credentials?.url;
+            if (!seoUrl)
+              throw new Error("Website URL required. Please configure the service first.");
+            results = await qualifAIService.runSEOAudit(
+              seoUrl,
               requirements
             );
             break;
           case "ppc":
-            results = await qualifAIService.runPPCQA(
+            if (!service.credentials)
+              throw new Error("PPC credentials required. Please configure the service first.");
+            results = await qualifAIService.runPPCAudit(
               service.credentials,
               requirements
             );
             break;
           case "content":
-            results = await qualifAIService.runContentQA(
+            if (!service.credentials)
+              throw new Error("Content credentials required. Please configure the service first.");
+            results = await qualifAIService.runContentAudit(
               service.credentials,
               requirements
             );

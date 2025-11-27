@@ -13,6 +13,7 @@ import {
   FiAlertTriangle,
   FiPlay,
   FiSettings,
+  FiTrash2,
 } from "react-icons/fi";
 import { LuBuilding2 } from "react-icons/lu";
 import { useRouter } from "next/navigation";
@@ -119,7 +120,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({
                   "px-2 py-1 rounded-lg text-xs font-medium capitalize transition-colors",
                   service.status === "active"
                     ? "bg-green-500/20 text-green-700 dark:text-green-400 hover:bg-green-500/30"
-                    : service.status === "needs-qa"
+                    : service.status === "pending"
                     ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/30"
                     : "bg-gray-500/20 text-gray-700 dark:text-gray-400 hover:bg-gray-500/30"
                 )}
