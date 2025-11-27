@@ -4,12 +4,12 @@ import { aiService } from "./ai.service";
 export interface QARequirement {
   id: string;
   type:
-    | "visual"
-    | "functional"
-    | "content"
-    | "technical"
-    | "seo"
-    | "performance";
+  | "visual"
+  | "functional"
+  | "content"
+  | "technical"
+  | "seo"
+  | "performance";
   description: string;
   priority: "critical" | "high" | "medium" | "low";
   expected: any;
@@ -167,6 +167,230 @@ class QualifAIService {
       requirement,
       ...analysis,
     };
+  }
+
+  private async runFunctionalQA(
+    url: string,
+    requirement: QARequirement
+  ): Promise<QAResult> {
+    const prompt = `
+    Test the functional requirement for this website.
+
+    URL: ${url}
+    REQUIREMENT: ${requirement.description}
+    EXPECTED: ${JSON.stringify(requirement.expected)}
+
+    Analyze if the functionality works as expected.
+    Provide analysis in JSON format:
+    {
+      "status": "pass|fail|warning",
+      "evidence": { /* what was tested */ },
+      "recommendations": [/* improvement suggestions */],
+      "confidence": 0.95
+    }
+    `;
+
+    const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+    return {
+      requirement,
+      ...analysis,
+    };
+  }
+
+  private async runSEOQA(
+    url: string,
+    requirement: QARequirement
+  ): Promise<QAResult> {
+    const prompt = `
+    Analyze the SEO aspects of this website.
+
+    URL: ${url}
+    REQUIREMENT: ${requirement.description}
+    EXPECTED: ${JSON.stringify(requirement.expected)}
+
+    Check for: meta tags, title tags, headings structure, alt text, sitemap, robots.txt, etc.
+    Provide analysis in JSON format:
+    {
+      "status": "pass|fail|warning",
+      "evidence": { /* SEO elements found */ },
+      "recommendations": [/* SEO improvement suggestions */],
+      "confidence": 0.95
+    }
+    `;
+
+    const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+    return {
+      requirement,
+      ...analysis,
+    };
+  }
+
+  private async runPerformanceQA(
+    url: string,
+    requirement: QARequirement
+  ): Promise<QAResult> {
+    const prompt = `
+    Analyze the performance of this website.
+
+    URL: ${url}
+    REQUIREMENT: ${requirement.description}
+    EXPECTED: ${JSON.stringify(requirement.expected)}
+
+    Check for: page load time, resource sizes, optimization opportunities.
+    Provide analysis in JSON format:
+    {
+      "status": "pass|fail|warning",
+      "evidence": { /* performance metrics */ },
+      "recommendations": [/* performance improvement suggestions */],
+      "confidence": 0.95
+    }
+    `;
+
+    const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+    return {
+      requirement,
+      ...analysis,
+    };
+  }
+
+  private async runGeneralQA(
+    url: string,
+    requirement: QARequirement
+  ): Promise<QAResult> {
+    const prompt = `
+    Perform a general quality check for this website.
+
+    URL: ${url}
+    REQUIREMENT: ${requirement.description}
+    EXPECTED: ${JSON.stringify(requirement.expected)}
+
+    Provide analysis in JSON format:
+    {
+      "status": "pass|fail|warning",
+      "evidence": { /* findings */ },
+      "recommendations": [/* suggestions */],
+      "confidence": 0.95
+    }
+    `;
+
+    const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+    return {
+      requirement,
+      ...analysis,
+    };
+  }
+
+  // Run SEO QA as a standalone service
+  async runSEOAudit(
+    url: string,
+    requirements: QARequirement[]
+  ): Promise<QAResult[]> {
+    const results: QAResult[] = [];
+
+    for (const requirement of requirements) {
+      try {
+        const result = await this.runSEOQA(url, requirement);
+        results.push(result);
+      } catch (error) {
+        console.error(
+          `SEO QA failed for requirement: ${requirement.description}`,
+          error
+        );
+        results.push({
+          requirement,
+          status: "fail",
+          evidence: { error: error.message },
+          recommendations: ["Check requirement specification and try again"],
+          confidence: 0,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  // Run PPC QA
+  async runPPCAudit(
+    credentials: any,
+    requirements: QARequirement[]
+  ): Promise<QAResult[]> {
+    const results: QAResult[] = [];
+
+    for (const requirement of requirements) {
+      try {
+        const prompt = `
+        Analyze PPC campaign performance.
+
+        REQUIREMENT: ${requirement.description}
+        EXPECTED: ${JSON.stringify(requirement.expected)}
+
+        Check campaign metrics, ad quality, targeting, budget utilization.
+        Provide analysis in JSON format.
+        `;
+
+        const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+        results.push({
+          requirement,
+          ...analysis,
+        });
+      } catch (error) {
+        console.error(
+          `PPC QA failed for requirement: ${requirement.description}`,
+          error
+        );
+        results.push({
+          requirement,
+          status: "fail",
+          evidence: { error: error.message },
+          recommendations: ["Check requirement specification and try again"],
+          confidence: 0,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  // Run Content QA
+  async runContentAudit(
+    credentials: any,
+    requirements: QARequirement[]
+  ): Promise<QAResult[]> {
+    const results: QAResult[] = [];
+
+    for (const requirement of requirements) {
+      try {
+        const prompt = `
+        Analyze content quality.
+
+        REQUIREMENT: ${requirement.description}
+        EXPECTED: ${JSON.stringify(requirement.expected)}
+
+        Check content quality, grammar, tone, structure, SEO optimization.
+        Provide analysis in JSON format.
+        `;
+
+        const analysis = await aiService.analyzeWithPrompt(prompt, "gpt-4");
+        results.push({
+          requirement,
+          ...analysis,
+        });
+      } catch (error) {
+        console.error(
+          `Content QA failed for requirement: ${requirement.description}`,
+          error
+        );
+        results.push({
+          requirement,
+          status: "fail",
+          evidence: { error: error.message },
+          recommendations: ["Check requirement specification and try again"],
+          confidence: 0,
+        });
+      }
+    }
+
+    return results;
   }
 
   // Similar methods for other QA types...

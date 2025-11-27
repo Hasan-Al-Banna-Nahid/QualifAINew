@@ -19,17 +19,24 @@ export default function SidebarToggle({
   const isDark = theme === "dark";
 
   return (
-    <button
+    <div
       className={clsx(
-        "bottom-[70] p-2 rounded-full shadow-lg transition-transform duration-300 hover:scale-110",
-        isDark ? "bg-slate-800 text-white" : "bg-white text-gray-900",
-        mobile
-          ? "fixed top-4 left-4 z-50 md:hidden" // Hamburger on mobile
-          : "w-full mt-auto" // Bottom toggle on desktop inside sidebar
+        "w-full mt-auto pb-4",
+        !open && "flex justify-center items-center"
       )}
-      onClick={() => setOpen(!open)}
     >
-      {open ? <IoArrowBack size={24} /> : <IoMenu size={24} />}
-    </button>
+      <button
+        className={clsx(
+          "p-2 rounded-full shadow-lg transition-transform duration-300 hover:scale-110 cursor-pointer",
+          isDark ? "bg-slate-800 text-white" : "bg-white text-gray-900",
+          mobile
+            ? "fixed top-4 left-4 z-50 md:hidden" // Hamburger on mobile
+            : "" // Bottom toggle on desktop inside sidebar
+        )}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? <IoArrowBack size={24} /> : <IoMenu size={24} />}
+      </button>
+    </div>
   );
 }

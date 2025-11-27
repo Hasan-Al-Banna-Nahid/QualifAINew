@@ -61,6 +61,7 @@ export default function ClientsPage() {
     total,
     isLoading,
     createClient,
+    createClientAsync,
     updateClient,
     deleteClient,
     isCreating,
@@ -76,7 +77,7 @@ export default function ClientsPage() {
     data: ClientFormSchema & { initialServices: ServiceType[] }
   ) => {
     try {
-      const result = await createClient(data);
+      const result = await createClientAsync(data);
 
       // If there's a service to configure after creation
       if (result?.id && data.initialServices.length > 0) {
@@ -92,10 +93,13 @@ export default function ClientsPage() {
     }
   };
 
-  const handleUpdateClient = async (data: ClientFormData) => {
+  const handleUpdateClient = async (
+    data: ClientFormSchema & { initialServices: ServiceType[] }
+  ) => {
     if (editingClient) {
       await updateClient({ id: editingClient.id, data });
       setEditingClient(null);
+      setShowForm(false);
     }
   };
 
@@ -129,7 +133,7 @@ export default function ClientsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent pb-4">
             Clients Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
@@ -391,6 +395,7 @@ export default function ClientsPage() {
               setShowForm(false);
               setEditingClient(null);
             }}
+            onDelete={handleDeleteClient}
             isSubmitting={isCreating || isUpdating}
           />
         )}

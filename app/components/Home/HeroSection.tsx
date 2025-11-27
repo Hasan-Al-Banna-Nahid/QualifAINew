@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useTheme } from "@/app/context/ThemeContext";
+import { useAuth } from "@/app/context/AuthContext";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useScrollAnimation } from "@/app/(main)/hooks/useScrollAnimation";
@@ -29,6 +30,7 @@ import { AnimatedBadge } from "@/app/components/ui/animated-badge";
 
 export default function HomePage() {
   const { theme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const isDark = theme === "dark";
   const [isDemoOpen, setIsDemoOpen] = useState(false);
 
@@ -58,7 +60,7 @@ export default function HomePage() {
           style={{ y: heroY, opacity: heroOpacity }}
           className="relative z-10 pt-20 pb-32"
         >
-          <HeroSection isDark={isDark} onDemoOpen={() => setIsDemoOpen(true)} />
+          <HeroSection isDark={isDark} isAuthenticated={isAuthenticated} onDemoOpen={() => setIsDemoOpen(true)} />
         </motion.section>
 
         {/* Features Section */}
@@ -148,13 +150,18 @@ function AnimatedBackground({ isDark }: { isDark: boolean }) {
 // Hero Section Component
 function HeroSection({
   isDark,
+  isAuthenticated,
   onDemoOpen,
 }: {
   isDark: boolean;
+  isAuthenticated: boolean;
   onDemoOpen: () => void;
 }) {
   return (
-    <div className="max-w-7xl mx-auto px-6 text-center">
+    <div className={clsx(
+      "mx-auto px-6 text-center",
+      isAuthenticated ? "w-full" : "max-w-7xl"
+    )}>
       <ScrollReveal direction="up" delay={0}>
         <AnimatedBadge
           icon={<Sparkles className="w-4 h-4" />}

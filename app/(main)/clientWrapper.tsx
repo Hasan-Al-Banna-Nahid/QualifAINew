@@ -15,7 +15,7 @@ export default function ClientLayout({
   sidebarRoutes,
 }: ClientLayoutProps) {
   const { isAuthenticated } = useAuth();
-  const { setSidebarOpen } = useLayout();
+  const { sidebarOpen, setSidebarOpen } = useLayout();
 
   // Initialize sidebar state based on authentication
   useEffect(() => {
@@ -26,6 +26,12 @@ export default function ClientLayout({
     }
   }, [isAuthenticated, setSidebarOpen]);
 
+  // Calculate margin based on sidebar state
+  const getMainContentMargin = () => {
+    if (!isAuthenticated) return "ml-0";
+    return sidebarOpen ? "lg:ml-64" : "lg:ml-20";
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
       {/* Sidebar - Only show when authenticated */}
@@ -35,7 +41,7 @@ export default function ClientLayout({
       <div
         className={`
         flex-1 transition-all duration-300 w-full
-        ${isAuthenticated ? "lg:ml-64" : "ml-0"}
+        ${getMainContentMargin()}
       `}
       >
         {children}

@@ -70,6 +70,19 @@ export const clientFormSchema = z.object({
     .string()
     .max(1000, "Notes must be less than 1000 characters")
     .optional(),
+  initialServices: z
+    .array(
+      z.enum([
+        "wordpress",
+        "ppc",
+        "seo",
+        "ai-automation",
+        "content",
+        "social-media",
+      ])
+    )
+    .optional()
+    .default([]),
 });
 
 export type ClientFormSchema = z.infer<typeof clientFormSchema>;

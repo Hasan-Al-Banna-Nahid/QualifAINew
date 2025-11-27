@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect } from "react";
 import SidebarContainer from "./SidebarContainer";
 import SidebarItem from "./SidebarItem";
 import SidebarToggle from "./SidebarToggle";
 import { useAuth } from "@/app/context/AuthContext";
+import { useLayout } from "@/app/context/LayoutContext";
 
 interface SidebarProps {
   routes: {
@@ -17,11 +18,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ routes, onToggle }: SidebarProps) {
-  const [desktopOpen, setDesktopOpen] = useState(true);
   const { isAuthenticated } = useAuth();
+  const { sidebarOpen, setSidebarOpen } = useLayout();
 
   const handleToggle = (value: boolean) => {
-    setDesktopOpen(value);
+    setSidebarOpen(value);
     if (onToggle) onToggle(value);
   };
 
@@ -37,7 +38,7 @@ export default function Sidebar({ routes, onToggle }: SidebarProps) {
   });
 
   return (
-    <SidebarContainer open={desktopOpen}>
+    <SidebarContainer open={sidebarOpen}>
       <div className="flex flex-col space-y-2 px-2">
         {filteredRoutes.map((route) => (
           <SidebarItem
@@ -45,11 +46,11 @@ export default function Sidebar({ routes, onToggle }: SidebarProps) {
             name={route.name}
             href={route.href}
             icon={route.icon}
-            open={desktopOpen}
+            open={sidebarOpen}
           />
         ))}
       </div>
-      <SidebarToggle open={desktopOpen} setOpen={handleToggle} />
+      <SidebarToggle open={sidebarOpen} setOpen={handleToggle} />
     </SidebarContainer>
   );
 }
