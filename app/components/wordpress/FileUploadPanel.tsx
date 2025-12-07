@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Upload, FileText, X } from "lucide-react";
+import { documentService } from "@/app/(main)/lib/services/document.service";
 
 export const FileUploadPanel = ({
   onFilesUpload,
@@ -12,20 +13,28 @@ export const FileUploadPanel = ({
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const newFiles = files.map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      uploadTime: new Date(),
-      status: "uploaded",
-    }));
+    
+    // Set loading state if needed (not implemented in UI yet, but good practice)
+    
+    try {
+      const newFiles = await Promise.all(files.map(async (file) => {
+        // Use the document service to upload
+        const uploadedDoc = await documentService.uploadDocument(file);
+        return {
+          ...uploadedDoc,
+          status: "uploaded",
+        };
+      }));
 
-    const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles(updatedFiles);
-    onFilesUpload(updatedFiles);
+      const updatedFiles = [...uploadedFiles, ...newFiles];
+      setUploadedFiles(updatedFiles);
+      onFilesUpload(updatedFiles);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      // Handle error (e.g. show toast)
+    }
   };
 
   const removeFile = (fileId: string) => {
