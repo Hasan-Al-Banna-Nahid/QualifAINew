@@ -1,13 +1,13 @@
 // services/ai.service.ts
 export interface AIPrompt {
   model:
-  | "gpt-4"
-  | "gpt-5"
-  | "claude-2"
-  | "gemini-pro"
-  | "gemini-flash"
-  | "llama-2"
-  | "nanobanana";
+    | "gpt-4"
+    | "gpt-5"
+    | "claude-2"
+    | "gemini-pro"
+    | "gemini-flash"
+    | "llama-2"
+    | "nanobanana";
   messages: Array<{
     role: "user" | "system" | "assistant";
     content: string;
@@ -157,13 +157,13 @@ class AIService {
     clientData: ClientData,
     options: {
       model?:
-      | "gpt-4"
-      | "gpt-5"
-      | "claude-2"
-      | "gemini-pro"
-      | "gemini-flash"
-      | "llama-2"
-      | "nanobanana";
+        | "gpt-4"
+        | "gpt-5"
+        | "claude-2"
+        | "gemini-pro"
+        | "gemini-flash"
+        | "llama-2"
+        | "nanobanana";
       detailed?: boolean;
       includeComparative?: boolean;
       budgetOptimized?: boolean;
@@ -395,10 +395,10 @@ class AIService {
         score >= 4
           ? "critical"
           : score >= 3
-            ? "high"
-            : score >= 2
-              ? "medium"
-              : "low",
+          ? "high"
+          : score >= 2
+          ? "medium"
+          : "low",
       recommendations: [
         "Establish clear communication and reporting protocols",
         "Define and track key performance indicators",
@@ -458,13 +458,13 @@ class AIService {
     clients: ClientData[],
     options: {
       model?:
-      | "gpt-4"
-      | "gpt-5"
-      | "claude-2"
-      | "gemini-pro"
-      | "gemini-flash"
-      | "llama-2"
-      | "nanobanana";
+        | "gpt-4"
+        | "gpt-5"
+        | "claude-2"
+        | "gemini-pro"
+        | "gemini-flash"
+        | "llama-2"
+        | "nanobanana";
       concurrent?: boolean;
       budgetOptimized?: boolean;
     } = {}
@@ -593,11 +593,11 @@ class AIService {
 
     CLIENTS SUMMARY:
     ${clients
-        .map(
-          (client) =>
-            `- ${client.company}: ${client.serviceType} (${client.status}), $${client.monthlyRetainer}/month, ${client.industry}`
-        )
-        .join("\n")}
+      .map(
+        (client) =>
+          `- ${client.company}: ${client.serviceType} (${client.status}), $${client.monthlyRetainer}/month, ${client.industry}`
+      )
+      .join("\n")}
 
     Provide insights on:
     1. Revenue distribution and trends
@@ -612,7 +612,7 @@ class AIService {
     return this.analyzeWithPrompt(prompt, model);
   }
 
-  public async analyzeWithPrompt(prompt: string, model: string) {
+  private async analyzeWithPrompt(prompt: string, model: string) {
     const modelConfig = this.getModelConfig(model);
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
@@ -688,13 +688,13 @@ export async function AIClientAnalysis(
   clientData: ClientData,
   options?: {
     model?:
-    | "gpt-4"
-    | "gpt-5"
-    | "claude-2"
-    | "gemini-pro"
-    | "gemini-flash"
-    | "llama-2"
-    | "nanobanana";
+      | "gpt-4"
+      | "gpt-5"
+      | "claude-2"
+      | "gemini-pro"
+      | "gemini-flash"
+      | "llama-2"
+      | "nanobanana";
     detailed?: boolean;
     includeComparative?: boolean;
     budgetOptimized?: boolean;

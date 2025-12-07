@@ -9,7 +9,11 @@ export interface QARequirement {
   | "content"
   | "technical"
   | "seo"
-  | "performance";
+  | "performance"
+  | "word_count"
+  | "keywords"
+  | "schema"
+  | "meta_tags";
   description: string;
   priority: "critical" | "high" | "medium" | "low";
   expected: any;
@@ -285,28 +289,282 @@ class QualifAIService {
     url: string,
     requirements: QARequirement[]
   ): Promise<QAResult[]> {
-    const results: QAResult[] = [];
+    try {
+      // Use Apify service for real SEO analysis
+      const response = await fetch('/api/qualifai/seo-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
 
-    for (const requirement of requirements) {
-      try {
-        const result = await this.runSEOQA(url, requirement);
-        results.push(result);
-      } catch (error) {
-        console.error(
-          `SEO QA failed for requirement: ${requirement.description}`,
-          error
-        );
-        results.push({
-          requirement,
-          status: "fail",
-          evidence: { error: error.message },
-          recommendations: ["Check requirement specification and try again"],
-          confidence: 0,
+      if (!response.ok) {
+        throw new Error('Failed to analyze SEO');
+      }
+
+      const { success, data: seoAnalysis } = await response.json();
+
+      if (!success || !seoAnalysis) {
+        throw new Error('SEO analysis failed');
+      }
+
+      // Convert SEO analysis to QA results format
+      const results: QAResult[] = [];
+
+      // 1. Validate Specific Requirements from Scope
+      if (requirements && requirements.length > 0) {
+        requirements.forEach((req) => {
+          let status: 'pass' | 'fail' | 'warning' = 'pass';
+          let evidence: any = {};
+          let recommendations: string[] = [];
+
+          switch (req.type) {
+            case 'word_count':
+              const actualWordCount = seoAnalysis.content.wordCount;
+              const requiredWordCount = req.expected?.count || 300;
+              if (actualWordCount < requiredWordCount) {
+                status = 'fail';
+                recommendations.push(`Increase content length to at least ${requiredWordCount} words (current: ${actualWordCount})`);
+              }
+              evidence = { actual: actualWordCount, required: requiredWordCount };
+              break;
+
+            case 'keywords':
+              const keyword = req.expected?.keyword;
+              if (keyword) {
+                // Simple check in text content
+                const textContent = seoAnalysis.content.text.toLowerCase();
+                const keywordPresent = textContent.includes(keyword.toLowerCase());
+
+                if (!keywordPresent) {
+                  status = 'fail';
+                  recommendations.push(`Add required keyword "${keyword}" to the content`);
+                }
+                evidence = { keyword, present: keywordPresent };
+              }
+              break;
+
+            case 'schema':
+              const schemaType = req.expected?.schemaType;
+              if (schemaType) {
+                const jsonLd = seoAnalysis.jsonLd || [];
+                const hasSchema = jsonLd.some((schema: any) =>
+                  schema['@type'] === schemaType || schema['@type']?.includes(schemaType)
+                );
+
+                if (!hasSchema) {
+                  status = 'fail';
+                  recommendations.push(`Implement "${schemaType}" schema markup`);
+                }
+                evidence = { schemaType, present: hasSchema, foundSchemas: jsonLd.map((s: any) => s['@type']) };
+              }
+              break;
+
+            case 'meta_tags':
+              if (req.expected?.tag === 'title') {
+                const title = seoAnalysis.title;
+                if (!title) {
+                  status = 'fail';
+                  recommendations.push('Add a page title');
+                } else if (req.expected.minLength && title.length < req.expected.minLength) {
+                  status = 'warning';
+                  recommendations.push(`Title is too short (min: ${req.expected.minLength})`);
+                }
+                evidence = { tag: 'title', value: title, length: title?.length };
+              } else if (req.expected?.tag === 'description') {
+                const desc = seoAnalysis.description;
+                if (!desc) {
+                  status = 'fail';
+                  recommendations.push('Add a meta description');
+                }
+                evidence = { tag: 'description', value: desc, length: desc?.length };
+              }
+              break;
+          }
+
+          results.push({
+            requirement: req,
+            status,
+            evidence: { ...evidence, seoAnalysis }, // Include full analysis for context
+            recommendations,
+            confidence: 0.95,
+          });
         });
       }
-    }
 
-    return results;
+      // 2. Add Overall SEO Health Check (if no specific requirements or as general audit)
+      // Always include the overall score as a summary result
+      results.push({
+        requirement: {
+          id: 'seo-overall',
+          type: 'seo',
+          description: 'Overall SEO Performance Score',
+          priority: 'critical',
+          expected: { score: 80 },
+          status: seoAnalysis.score >= 80 ? 'pass' : seoAnalysis.score >= 60 ? 'warning' : 'fail',
+        },
+        status: seoAnalysis.score >= 80 ? 'pass' : seoAnalysis.score >= 60 ? 'warning' : 'fail',
+        evidence: {
+          score: seoAnalysis.score,
+          url: seoAnalysis.url,
+          seoAnalysis,
+        },
+        recommendations: seoAnalysis.issues?.map((issue: any) => issue.message) || [],
+        confidence: 0.95,
+      });
+
+      // 3. Add Specific Issues Found by Apify as additional results
+      if (seoAnalysis.issues && seoAnalysis.issues.length > 0) {
+        seoAnalysis.issues.forEach((issue: any, index: number) => {
+          // Only add if not covered by specific requirements to avoid duplicates?
+          // For now, add them as "Detected Issues"
+          results.push({
+            requirement: {
+              id: `seo-issue-${index}`,
+              type: 'seo',
+              description: `[Auto-Detected] ${issue.category}: ${issue.message}`,
+              priority: issue.type === 'critical' ? 'critical' : issue.type === 'warning' ? 'high' : 'medium',
+              expected: {},
+              status: 'fail',
+            },
+            status: 'fail',
+            evidence: { issue },
+            recommendations: [issue.message],
+            confidence: 0.9,
+          });
+        });
+      }
+
+      return results;
+    } catch (error) {
+      console.error('SEO Audit failed:', error);
+
+      // Return a single failed result
+      return [{
+        requirement: {
+          id: 'seo-error',
+          type: 'seo',
+          description: 'SEO Analysis',
+          priority: 'critical',
+          expected: {},
+          status: 'fail',
+        },
+        status: 'fail',
+        evidence: { error: error instanceof Error ? error.message : 'Unknown error' },
+        recommendations: ['Check URL accessibility and try again'],
+        confidence: 0,
+      }];
+    }
+  }
+
+  /**
+   * Run WordPress Audit
+   */
+  async runWordPressAudit(url: string, requirements: QARequirement[]): Promise<QAResult[]> {
+    try {
+      const response = await fetch('/api/qualifai/wordpress-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+
+      if (!response.ok) {
+        throw new Error(`WordPress analysis failed: ${response.statusText}`);
+      }
+
+      const wpAnalysis = await response.json();
+      const results: QAResult[] = [];
+
+      // 1. Check if it is WordPress
+      results.push({
+        requirement: {
+          id: 'wp-detection',
+          type: 'technical',
+          priority: 'critical',
+          description: 'Verify WordPress Platform',
+          expected: { isWordPress: true },
+          status: wpAnalysis.isWordPress ? 'pass' : 'fail'
+        },
+        status: wpAnalysis.isWordPress ? 'pass' : 'fail',
+        evidence: { isWordPress: wpAnalysis.isWordPress, wpAnalysis }, // Attach full analysis here
+        recommendations: wpAnalysis.isWordPress ? [] : ['Ensure the site is built with WordPress'],
+        confidence: 1.0
+      });
+
+      if (wpAnalysis.isWordPress) {
+        // Version Check
+        results.push({
+          requirement: {
+            id: 'wp-version',
+            type: 'technical',
+            priority: 'medium',
+            description: 'WordPress Version Check',
+            expected: { hidden: true },
+            status: wpAnalysis.version ? 'warning' : 'pass'
+          },
+          status: wpAnalysis.version ? 'warning' : 'pass',
+          evidence: { version: wpAnalysis.version },
+          recommendations: wpAnalysis.version ? ['Hide WordPress version to improve security'] : [],
+          confidence: 0.9
+        });
+
+        // HTTPS Check
+        results.push({
+          requirement: {
+            id: 'wp-https',
+            type: 'technical',
+            priority: 'critical',
+            description: 'HTTPS Security',
+            expected: { https: true },
+            status: wpAnalysis.security.https ? 'pass' : 'fail'
+          },
+          status: wpAnalysis.security.https ? 'pass' : 'fail',
+          evidence: { https: wpAnalysis.security.https },
+          recommendations: wpAnalysis.security.https ? [] : ['Enable HTTPS for the website'],
+          confidence: 1.0
+        });
+
+        // Add issues found
+        if (wpAnalysis.issues && wpAnalysis.issues.length > 0) {
+          wpAnalysis.issues.forEach((issue: any, index: number) => {
+            results.push({
+              requirement: {
+                id: `wp-issue-${index}`,
+                type: 'technical',
+                description: `[Auto-Detected] ${issue.category}: ${issue.message}`,
+                priority: issue.type === 'critical' ? 'critical' : issue.type === 'warning' ? 'high' : 'medium',
+                expected: {},
+                status: 'fail',
+              },
+              status: 'fail',
+              evidence: { issue },
+              recommendations: [issue.message],
+              confidence: 0.9,
+            });
+          });
+        }
+      }
+
+      return results;
+
+    } catch (error) {
+      console.error('WordPress Audit failed:', error);
+      return [{
+        requirement: {
+          id: 'wp-error',
+          type: 'technical',
+          description: 'WordPress Analysis',
+          priority: 'critical',
+          expected: {},
+          status: 'fail',
+        },
+        status: 'fail',
+        evidence: { error: error instanceof Error ? error.message : 'Unknown error' },
+        recommendations: ['Check URL accessibility and try again'],
+        confidence: 0,
+      }];
+    }
   }
 
   // Run PPC QA
