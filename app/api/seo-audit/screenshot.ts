@@ -1,174 +1,103 @@
-// app/api/seo-audit/screenshot.ts
-import puppeteer from "puppeteer";
+// app/api/seo-audit/screenshot-service.ts
+export class ScreenshotService {
+  private apiKey: string;
+  private baseUrl = "https://screenshotapi.net/api/v1/screenshot";
 
-export class ScreenshotCapture {
-  private browser: any = null;
-
-  async initialize(): Promise<void> {
-    if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
-      });
+  constructor() {
+    this.apiKey = process.env.SCREENSHOTAPI_KEY || "";
+    if (!this.apiKey) {
+      console.warn(
+        "SCREENSHOTAPI_KEY not set. Screenshots will be placeholders.",
+      );
     }
   }
 
   async captureMultiple(urls: string[]): Promise<Record<string, string>> {
-    await this.initialize();
     const screenshots: Record<string, string> = {};
+    const limitedUrls = urls.slice(0, 5); // Limit to 5 URLs due to API limits
 
-    for (const url of urls) {
+    for (const url of limitedUrls) {
       try {
-        const screenshot = await this.capturePage(url);
-        screenshots[url] = screenshot;
+        screenshots[url] = await this.captureWithScreenshotAPI(url);
       } catch (error) {
-        console.error(`Screenshot failed for ${url}:`, error);
-        screenshots[url] = "";
+        console.warn(`Failed to capture ${url}:`, error);
+        screenshots[url] = this.generatePlaceholder(url);
       }
     }
 
-    await this.cleanup();
     return screenshots;
   }
 
-  async capturePage(url: string): Promise<string> {
-    await this.initialize();
-    const page = await this.browser.newPage();
-
-    try {
-      await page.setViewport({ width: 1920, height: 1080 });
-      await page.goto(url, {
-        waitUntil: "networkidle2",
-        timeout: 30000,
-      });
-
-      // Wait for content to load - FIXED
-      await new Promise((resolve: any) => setTimeout(resolve, 2000));
-
-      // Capture full page screenshot
-      const screenshot = await page.screenshot({
-        fullPage: true,
-        encoding: "base64",
-        type: "png",
-      });
-
-      return `data:image/png;base64,${screenshot}`;
-    } catch (error) {
-      console.error(`Screenshot capture failed for ${url}:`, error);
-      throw error;
-    } finally {
-      await page.close();
+  private async captureWithScreenshotAPI(url: string): Promise<string> {
+    if (!this.apiKey) {
+      return this.generatePlaceholder(url);
     }
+
+    const params = new URLSearchParams({
+      url,
+      token: this.apiKey,
+      width: "1280",
+      height: "720",
+      output: "image",
+      ttl: "0",
+      fresh: "true",
+    });
+
+    const response = await fetch(`${this.baseUrl}?${params.toString()}`, {
+      method: "GET",
+      headers: {
+        Accept: "image/*",
+      },
+      // timeout: 30000,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Screenshot API error: ${response.status}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    const contentType = response.headers.get("content-type") || "image/png";
+
+    return `data:${contentType};base64,${base64}`;
   }
 
-  async captureElement(url: string, selector: string): Promise<string> {
-    await this.initialize();
-    const page = await this.browser.newPage();
-
+  private generatePlaceholder(url: string): string {
     try {
-      await page.goto(url, { waitUntil: "networkidle2" });
-      const element = await page.$(selector);
-
-      if (!element) {
-        throw new Error(`Element ${selector} not found`);
-      }
-
-      const screenshot = await element.screenshot({ encoding: "base64" });
-      return `data:image/png;base64,${screenshot}`;
-    } finally {
-      await page.close();
-    }
-  }
-
-  async captureAboveFold(url: string): Promise<string> {
-    await this.initialize();
-    const page = await this.browser.newPage();
-
-    try {
-      await page.setViewport({ width: 1920, height: 1080 });
-      await page.goto(url, { waitUntil: "networkidle2" });
-
-      const screenshot = await page.screenshot({
-        clip: { x: 0, y: 0, width: 1920, height: 1080 },
-        encoding: "base64",
-      });
-
-      return `data:image/png;base64,${screenshot}`;
-    } finally {
-      await page.close();
-    }
-  }
-
-  async captureMobile(url: string): Promise<string> {
-    await this.initialize();
-    const page = await this.browser.newPage();
-
-    try {
-      await page.setViewport({ width: 375, height: 667, isMobile: true });
-      await page.setUserAgent(
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+      const domain = new URL(url).hostname;
+      const svg = `
+        <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4f46e5" />
+              <stop offset="100%" stop-color="#7c3aed" />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#gradient)" />
+          <text x="50%" y="40%" font-family="Arial, sans-serif" font-size="48" text-anchor="middle" fill="white" font-weight="bold">
+            ${domain}
+          </text>
+          <text x="50%" y="55%" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#e0e7ff">
+            QualifAI SEO Audit
+          </text>
+          <text x="50%" y="70%" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#c7d2fe">
+            Screenshot preview
+          </text>
+        </svg>
+      `;
+      return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+    } catch {
+      return (
+        "data:image/svg+xml;base64," +
+        Buffer.from(
+          `
+        <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="#1e40af" />
+          <text x="50%" y="50%" font-family="Arial" font-size="24" text-anchor="middle" fill="white">SEO Audit Preview</text>
+        </svg>
+      `,
+        ).toString("base64")
       );
-      await page.goto(url, { waitUntil: "networkidle2" });
-
-      const screenshot = await page.screenshot({
-        fullPage: true,
-        encoding: "base64",
-      });
-
-      return `data:image/png;base64,${screenshot}`;
-    } finally {
-      await page.close();
-    }
-  }
-
-  async captureWithHighlight(
-    url: string,
-    selectors: string[],
-  ): Promise<string> {
-    await this.initialize();
-    const page = await this.browser.newPage();
-
-    try {
-      await page.goto(url, { waitUntil: "networkidle2" });
-
-      // Inject CSS to highlight elements
-      await page.addStyleTag({
-        content: `
-          .seo-highlight {
-            outline: 3px solid red !important;
-            background-color: rgba(255, 0, 0, 0.1) !important;
-          }
-        `,
-      });
-
-      // Add highlight class to selectors
-      for (const selector of selectors) {
-        await page.evaluate((sel: any) => {
-          const elements = document.querySelectorAll(sel);
-          elements.forEach((el) => el.classList.add("seo-highlight"));
-        }, selector);
-      }
-
-      const screenshot = await page.screenshot({
-        fullPage: true,
-        encoding: "base64",
-      });
-
-      return `data:image/png;base64,${screenshot}`;
-    } finally {
-      await page.close();
-    }
-  }
-
-  async cleanup(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
     }
   }
 }

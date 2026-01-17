@@ -4,7 +4,7 @@ import { UltraSEOCrawler } from "./crawler";
 import { FileParser } from "./file-parser";
 import { getEnhancedAIInsights } from "./ai";
 import { MLAnalyzer } from "./ml-analyzer";
-import { ScreenshotCapture } from "./screenshot";
+import { ScreenshotService } from "./screenshot";
 import { ReportGenerator } from "./report-generator";
 import {
   analyzeCrawlability,
@@ -126,17 +126,17 @@ export async function POST(req: NextRequest) {
       dns: dnsAnalysis,
     };
 
-    // Capture screenshots if requested
+    // Capture screenshots using ScreenshotService if requested
     let screenshots: Record<string, string> = {};
     if (captureScreenshots) {
       console.log("📸 Capturing screenshots...");
-      const screenshotCapture = new ScreenshotCapture();
-      screenshots = await screenshotCapture.captureMultiple(
-        Array.from(crawler.getVisitedUrls()).slice(0, 10),
+      const screenshotService = new ScreenshotService();
+      screenshots = await screenshotService.captureMultiple(
+        Array.from(crawler.getVisitedUrls()).slice(0, 5), // Limit to 5 URLs
       );
+      console.log(`✅ Captured ${Object.keys(screenshots).length} screenshots`);
     }
 
-    // Run ML Analysis if requested
     // Run ML Analysis if requested
     let mlResults: any = null;
     if (mlAnalysis) {
@@ -152,11 +152,15 @@ export async function POST(req: NextRequest) {
           status: "fallback",
           ranking_prediction: { predicted_rank: 50, confidence: 0.5 },
           content_quality_score: { overall_score: 50, grade: "C" },
+          traffic_forecast: {
+            predicted_increase: "10%",
+            timeframe: "3 months",
+          },
         };
       }
     }
 
-    // Get AI insights - add better error handling
+    // Get AI insights
     let aiInsights: any = {};
     try {
       console.log("🧠 Generating AI insights...");
@@ -165,16 +169,23 @@ export async function POST(req: NextRequest) {
     } catch (aiError) {
       console.error("❌ AI insights failed:", aiError);
       aiInsights = {
-        recommendations: ["Fix critical errors", "Improve page speed"],
-        competitiveAnalysis: "Analysis unavailable",
-        contentOptimization: "Content optimization suggestions unavailable",
-        technicalImprovements: ["Check technical SEO basics"],
+        recommendations: [
+          "Fix critical errors found in the audit",
+          "Improve page loading speed",
+          "Add missing alt text to images",
+          "Implement proper heading hierarchy",
+          "Add unique title tags to all pages",
+        ],
+        competitiveAnalysis: "Analysis unavailable due to AI service error.",
+        contentOptimization: "Content optimization suggestions unavailable.",
+        technicalImprovements: [
+          "Check technical SEO basics",
+          "Fix broken links",
+        ],
         priorityActions: [],
       };
     }
 
-    // Get AI insights
-    console.log("🧠 Generating AI insights...");
     crawlResult.aiInsights = aiInsights;
 
     const scanTime = Date.now() - startTime;
@@ -264,15 +275,27 @@ export async function POST(req: NextRequest) {
     // Generate PDF if requested
     if (generatePDF) {
       console.log("📄 Generating PDF report...");
-      const reportGen = new ReportGenerator();
-      response.pdfReport = await reportGen.generatePDF(response);
+      try {
+        const reportGen = new ReportGenerator();
+        response.pdfReport = await reportGen.generatePDF(response);
+        console.log("✅ PDF report generated");
+      } catch (pdfError) {
+        console.error("❌ PDF generation failed:", pdfError);
+        response.pdfReport = null;
+      }
     }
 
     // Generate CSV if requested
     if (generateCSV) {
       console.log("📊 Generating CSV export...");
-      const reportGen = new ReportGenerator();
-      response.csvExport = await reportGen.generateCSV(response);
+      try {
+        const reportGen = new ReportGenerator();
+        response.csvExport = await reportGen.generateCSV(response);
+        console.log("✅ CSV export generated");
+      } catch (csvError) {
+        console.error("❌ CSV generation failed:", csvError);
+        response.csvExport = null;
+      }
     }
 
     console.log(`✅ Audit completed in ${scanTime}ms`);
@@ -293,7 +316,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    name: "Ultra SEO Audit API - 500+ Features",
+    name: "QualifAI SEO Audit API - 500+ Features",
     version: "5.0.0",
     description: "World's most comprehensive SEO analysis platform",
 
@@ -447,11 +470,10 @@ export async function GET() {
           "Action items",
         ],
         Screenshots: [
-          "Full page capture",
-          "Above fold",
-          "Mobile view",
-          "Issue highlighting",
-          "Visual comparison",
+          "External API capture",
+          "SVG placeholders",
+          "Preview images",
+          "Quality thumbnails",
         ],
         "Custom Analysis": [
           "Custom selectors",
@@ -505,6 +527,12 @@ export async function GET() {
       "Issue Classification (SVM)",
       "Content Quality Scoring (Neural Network)",
       "Anomaly Detection (Isolation Forest)",
+    ],
+
+    screenshotServices: [
+      "ScreenshotAPI.net (External API)",
+      "SVG Placeholders (Fallback)",
+      "High-quality thumbnails",
     ],
 
     supportedFileFormats: ["CSV", "JSON", "TXT", "PDF"],
