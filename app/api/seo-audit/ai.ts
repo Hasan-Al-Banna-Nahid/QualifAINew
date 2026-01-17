@@ -5,59 +5,53 @@ interface AIProvider {
   analyze(prompt: string): Promise<string>;
 }
 
-class GeminiFlashProvider implements AIProvider {
-  name = "Gemini 2.0 Flash";
-
-  async analyze(prompt: string): Promise<string> {
-    const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    if (!GOOGLE_API_KEY) throw new Error("Google API key not configured");
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 4000 },
-        }),
-      },
-    );
-
-    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
-  }
-}
-
 class ClaudeProvider implements AIProvider {
-  name = "Claude Sonnet 3.5";
+  name = "GPT";
 
   async analyze(prompt: string): Promise<string> {
-    const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-    if (!OPENROUTER_API_KEY)
+    const OPENROUTER_API_KEY =
+      process.env.OPENROUTER_API_KEY ||
+      process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+
+    if (!OPENROUTER_API_KEY) {
+      console.error("OpenRouter API key not configured");
       throw new Error("OpenRouter API key not configured");
+    }
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://your-domain.com", // Required by OpenRouter
+            "X-Title": "SEO Audit Tool", // Optional but recommended
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-4", // Use a working model
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 4000,
+          }),
         },
-        body: JSON.stringify({
-          model: "anthropic/claude-3-5-sonnet",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-      },
-    );
+      );
 
-    if (!response.ok) throw new Error(`Claude API error: ${response.status}`);
-    const data = await response.json();
-    return data.choices[0].message.content;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenRouter API Error:", response.status, errorText);
+        throw new Error(
+          `OpenRouter API error: ${response.status} - ${errorText}`,
+        );
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "No response from AI";
+    } catch (error) {
+      console.error("AI analysis failed:", error);
+      throw error;
+    }
   }
 }
 
@@ -132,10 +126,7 @@ Focus on:
 
 Be specific, actionable, and provide context for each recommendation.`;
 
-  const providers: AIProvider[] = [
-    new GeminiFlashProvider(),
-    new ClaudeProvider(),
-  ];
+  const providers: AIProvider[] = [new ClaudeProvider()];
 
   for (const provider of providers) {
     try {
