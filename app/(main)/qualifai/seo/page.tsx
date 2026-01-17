@@ -1,32 +1,19 @@
-// app/page.tsx
+// app/(main)/qualifai/seo/page.tsx - FIXED VERSION
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BarChart,
   Bar,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  Legend as RechartsLegend,
   ResponsiveContainer,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  AreaChart,
-  Area,
-  Scatter,
-  ZAxis,
-  Treemap,
 } from "recharts";
 
 // Import only necessary icons
@@ -42,109 +29,33 @@ import {
   AlertTriangle,
   TrendingUp,
   Link,
-  Download,
   BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
-  Eye,
-  Code,
-  Users,
   Cpu,
   Smartphone,
-  Lock,
-  Wifi,
-  Target,
-  Clock,
-  Hash,
-  Database,
-  Server,
-  Network,
-  ShieldAlert,
-  Bell,
-  Star,
-  Award,
-  TrendingDown,
-  Globe2,
-  Cloud,
-  Layers,
-  Filter,
-  Settings,
-  HelpCircle,
-  Info,
-  Maximize2,
-  Minimize2,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  MessageSquare,
   Bot,
   Sparkles,
   Scan,
-  ScanLine,
   ScanSearch,
-  GlobeLock,
-  RefreshCw,
+  Clock,
   Loader2,
   Copy,
   Check,
-  X,
-  AlertOctagon,
-  Lightbulb,
-  TargetIcon,
-  Gauge,
+  ChevronDown,
+  ChevronUp,
+  Users,
+  Server,
+  Network,
+  Database,
+  Activity,
   ShieldCheck,
   SmartphoneIcon,
-  GlobeIcon,
-  WifiOff,
-  ServerIcon,
-  NetworkIcon,
-  DatabaseIcon,
-  Code2,
-  Image as ImageIcon,
-  Type,
-  Heading,
-  Link2,
-  Navigation,
-  GlobeLockIcon,
-  BotIcon,
-  CpuIcon,
-  HardDrive,
-  Radio,
-  BellRing,
-  EyeOff,
-  Fingerprint,
-  Key,
-  Mail,
-  MessageCircle,
-  Monitor,
-  MonitorSmartphone,
-  Package,
-  Puzzle,
-  QrCode,
-  SearchCheck,
-  ShieldHalf,
-  SmartphoneCharging,
-  Tablet,
-  Terminal,
-  Text,
   Timer,
-  TimerOff,
-  Upload,
-  Video,
-  Volume2,
-  WifiIcon,
-  Workflow,
-  ZapOff,
-  ZoomIn,
-  ZoomOut,
-  FileCode,
-  FileJson,
-  FileSpreadsheet,
-  FileDigit,
+  ShieldAlert,
   FileWarning,
-  Folder,
-  FolderOpen,
-  FolderTree,
+  AlertOctagon,
+  Layers,
+  Gauge,
+  GlobeLock,
 } from "lucide-react";
 
 import {
@@ -156,26 +67,13 @@ import {
   Input,
   Badge,
   Progress,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
 } from "@/app/components/ui";
 
-// Types
+// Types based on your API response
 interface ScanOption {
   value: string;
   label: string;
@@ -186,76 +84,22 @@ interface ScanOption {
   recommendedFor: string;
 }
 
-interface AuditCheck {
-  id: number;
-  category: string;
-  name: string;
-  description: string;
-  importance: "critical" | "high" | "medium" | "low";
-  status: "pass" | "fail" | "warning";
-  score: number;
-  recommendation: string;
-  details?: any;
-  issue?: string | null;
+interface Issue {
+  type: string;
+  count: number;
+  severity: "error" | "warning" | "notice";
+  affectedPages: Array<{
+    url: string;
+    details: string;
+    discovered: string;
+  }>;
 }
 
-interface SiteHealth {
-  score: number;
-  crawledPages: number;
-  errors: number;
-  warnings: number;
-  notices: number;
-  passes: number;
-  issuesFound?: number;
-}
-
-interface TrafficData {
-  organic: number;
-  keywords: number;
-  backlinks: number;
-  domains: number;
-}
-
-interface CategoryScores {
-  Technical: number;
-  "On-Page": number;
-  Performance: number;
-  Content: number;
-}
-
-interface RealIssue {
-  page: string;
-  issue?: string;
-  severity: string;
-  recommendation: string;
-  title?: string;
-  length?: number;
-  count?: number;
-  images?: string[];
-  ratio?: string;
-}
-
-interface RealIssues {
-  missingH1: RealIssue[];
-  longTitles: RealIssue[];
-  missingAltText: RealIssue[];
-  brokenLinks: RealIssue[];
-  missingMetaDesc: RealIssue[];
-  lowTextRatio: RealIssue[];
-  duplicateTitles: RealIssue[];
-  slowPages?: RealIssue[];
-  duplicateContent?: RealIssue[];
-  redirectChains?: RealIssue[];
-  insecureResources?: RealIssue[];
-}
-
-interface TechnicalReport {
-  crawlability?: any;
-  performance?: any;
-  security?: any;
-  mobile?: any;
-  international?: any;
-  dns?: any;
+interface TopIssue {
+  title: string;
+  count: number;
+  percentage: number;
+  type: "error" | "warning" | "notice";
 }
 
 interface AIInsights {
@@ -271,28 +115,71 @@ interface AIInsights {
   }>;
 }
 
-interface CrawlInfo {
-  pagesScanned?: number;
-  scanType?: string;
-  scanTime?: number;
-  totalLinks?: number;
-  uniquePages?: number;
+interface Performance {
+  loadTime: number;
+  pageSize: number;
+  requests: number;
+}
+
+interface Mobile {
+  friendly: boolean;
+  hasViewport: boolean;
+}
+
+interface Security {
+  hasSSL: boolean;
+  securityScore: number;
+}
+
+interface Summary {
+  totalPages: number;
+  totalIssues: number;
+  healthScore: number;
+  performance: Performance;
+  mobile: Mobile;
+  security: Security;
+}
+
+interface TechnicalDetails {
+  crawlability: any;
+  mobile: any;
+  international: any;
+  performance: any;
+  security: any;
+  dns: any;
 }
 
 interface AuditData {
   url: string;
-  overallScore: number;
-  healthScore: number;
-  checks: AuditCheck[];
-  summary: SiteHealth;
-  categoryScores: CategoryScores;
-  traffic: TrafficData;
-  realIssues?: RealIssues;
-  technicalReport?: TechnicalReport;
-  aiInsights?: AIInsights;
-  crawlInfo?: CrawlInfo;
-  timestamp: string;
   auditId: string;
+  timestamp: string;
+  scanType: string;
+  scanTime: number;
+
+  // Main results from API
+  siteHealth: {
+    score: number;
+    crawledPages: number;
+    errors: number;
+    warnings: number;
+    notices: number;
+  };
+
+  topIssues: TopIssue[];
+
+  // Categorized issues
+  errors: Record<string, Issue>;
+  warnings: Record<string, Issue>;
+  notices: Record<string, Issue>;
+
+  // Technical analysis
+  technical: TechnicalDetails;
+
+  // AI insights
+  ai: AIInsights;
+
+  // Summary for quick overview
+  summary: Summary;
 }
 
 const COLORS = [
@@ -303,9 +190,9 @@ const COLORS = [
   "#8b5cf6",
   "#06b6d4",
   "#f97316",
-  "#8b5cf6",
   "#ec4899",
   "#84cc16",
+  "#f43f5e",
 ];
 
 const SCAN_OPTIONS: ScanOption[] = [
@@ -343,26 +230,13 @@ export default function QualifaiSEOAudit() {
   const [loading, setLoading] = useState(false);
   const [scanType, setScanType] = useState("single");
   const [auditData, setAuditData] = useState<AuditData | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [progress, setProgress] = useState(0);
-  const [showReport, setShowReport] = useState(false);
   const [scanInProgress, setScanInProgress] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState("");
   const [scannedPages, setScannedPages] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState("");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [expandedSections, setExpandedSections] = useState<
-    Record<string, boolean>
-  >({
-    technical: true,
-    onpage: true,
-    performance: true,
-    content: true,
-    ai: true,
-    issues: true,
-    traffic: true,
-  });
 
   const selectedScanOption = SCAN_OPTIONS.find((o) => o.value === scanType);
 
@@ -387,7 +261,6 @@ export default function QualifaiSEOAudit() {
     setLoading(true);
     setScanInProgress(true);
     setProgress(0);
-    setScannedPages(0);
     setCrawlStatus("Initializing scan...");
     setAuditData(null);
 
@@ -424,11 +297,6 @@ export default function QualifaiSEOAudit() {
           if (scanType === "single") {
             setCrawlStatus("Analyzing content and performance...");
           } else {
-            setScannedPages(
-              Math.floor(
-                (progress / 100) * (scanType === "limited" ? 20 : 100),
-              ),
-            );
             setCrawlStatus(`Crawling site... ${scannedPages} pages scanned`);
           }
         } else {
@@ -458,6 +326,7 @@ export default function QualifaiSEOAudit() {
 
       const data = await response.json();
       setAuditData(data);
+      setScannedPages(data?.summary?.totalPages || 0);
 
       clearInterval(progressInterval);
       setProgress(100);
@@ -483,65 +352,50 @@ export default function QualifaiSEOAudit() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircle className="h-5 w-5 text-green-400" />;
-      case "warning":
-        return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
-      case "fail":
-        return <XCircle className="h-5 w-5 text-red-400" />;
-      default:
-        return <HelpCircle className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pass":
-        return "bg-green-500/10 border-green-500/30 text-green-400";
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "error":
+        return "bg-red-500/10 border-red-500/30 text-red-400";
       case "warning":
         return "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
-      case "fail":
-        return "bg-red-500/10 border-red-500/30 text-red-400";
+      case "notice":
+        return "bg-blue-500/10 border-blue-500/30 text-blue-400";
       default:
         return "bg-gray-500/10 border-gray-500/30 text-gray-400";
     }
   };
 
-  const getImportanceColor = (importance: string) => {
-    switch (importance) {
-      case "critical":
-        return "bg-red-500 text-white";
-      case "high":
-        return "bg-orange-500 text-white";
-      case "medium":
-        return "bg-yellow-500 text-gray-900";
-      case "low":
-        return "bg-blue-500 text-white";
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case "error":
+        return <XCircle className="h-5 w-5 text-red-400" />;
+      case "warning":
+        return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
+      case "notice":
+        return <AlertCircle className="h-5 w-5 text-blue-400" />;
       default:
-        return "bg-gray-500 text-white";
+        return <AlertCircle className="h-5 w-5 text-gray-400" />;
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-400";
-    if (score >= 70) return "text-yellow-400";
-    if (score >= 50) return "text-orange-400";
+    if (score >= 80) return "text-green-400";
+    if (score >= 60) return "text-yellow-400";
+    if (score >= 40) return "text-orange-400";
     return "text-red-400";
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return "bg-green-500/20";
-    if (score >= 70) return "bg-yellow-500/20";
-    if (score >= 50) return "bg-orange-500/20";
+    if (score >= 80) return "bg-green-500/20";
+    if (score >= 60) return "bg-yellow-500/20";
+    if (score >= 40) return "bg-orange-500/20";
     return "bg-red-500/20";
   };
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
+    return num?.toString() || "0";
   };
 
   const formatTime = (ms: number): string => {
@@ -552,43 +406,54 @@ export default function QualifaiSEOAudit() {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+  // Calculate total issues
+  const totalIssues = auditData
+    ? auditData.siteHealth.errors +
+      auditData.siteHealth.warnings +
+      auditData.siteHealth.notices
+    : 0;
+
+  // Calculate category scores based on issues
+  const calculateCategoryScore = (category: string): number => {
+    if (!auditData) return 0;
+
+    const totalPages = auditData.siteHealth.crawledPages;
+    let issues = 0;
+
+    switch (category) {
+      case "Technical":
+        issues = Object.values(auditData.errors).reduce(
+          (sum, issue) => sum + issue.count,
+          0,
+        );
+        break;
+      case "Content":
+        issues =
+          (auditData.errors.duplicateContent?.count || 0) +
+          (auditData.errors.duplicateTitles?.count || 0) +
+          (auditData.errors.duplicateMetaDescriptions?.count || 0);
+        break;
+      case "Performance":
+        return auditData.technical?.performance
+          ? Math.max(0, 100 - auditData.technical.performance.loadTime / 100)
+          : 70;
+      case "Mobile":
+        return auditData.technical?.mobile?.mobileFriendly ? 90 : 50;
+    }
+
+    return Math.max(0, 100 - (issues / totalPages) * 100);
   };
 
-  const filteredChecks =
-    selectedCategory === "all"
-      ? auditData?.checks
-      : auditData?.checks.filter((c) => c.category === selectedCategory);
-
-  const issueStats = auditData?.realIssues
-    ? {
-        total: Object.values(auditData.realIssues).flat().length,
-        critical: Object.values(auditData.realIssues)
-          .flat()
-          .filter((i: any) => i.severity === "critical").length,
-        high: Object.values(auditData.realIssues)
-          .flat()
-          .filter((i: any) => i.severity === "high").length,
-        medium: Object.values(auditData.realIssues)
-          .flat()
-          .filter((i: any) => i.severity === "medium").length,
-        low: Object.values(auditData.realIssues)
-          .flat()
-          .filter((i: any) => i.severity === "warning" || i.severity === "low")
-          .length,
-      }
-    : null;
+  const categoryScores = {
+    Technical: calculateCategoryScore("Technical"),
+    Content: calculateCategoryScore("Content"),
+    Performance: calculateCategoryScore("Performance"),
+    Mobile: calculateCategoryScore("Mobile"),
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
-      <div
-        className="max-w-7xl mx-auto space-y-4 md:space-y-6"
-        id="audit-report"
-      >
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -629,7 +494,9 @@ export default function QualifaiSEOAudit() {
                     <Input
                       placeholder="https://example.com"
                       value={url}
-                      onChange={(e: any) => setUrl(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setUrl(e.target.value)
+                      }
                       className="pl-10 bg-gray-800 border-gray-700 text-white h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       disabled={loading}
                     />
@@ -780,27 +647,31 @@ export default function QualifaiSEOAudit() {
               {[
                 {
                   label: "Pages Scanned",
-                  value: auditData.summary.crawledPages,
+                  value: auditData.siteHealth.crawledPages,
                   icon: FileText,
                   color: "blue",
+                  description: "Total pages analyzed",
                 },
                 {
                   label: "Issues Found",
-                  value: auditData.summary.issuesFound,
+                  value: totalIssues,
                   icon: AlertCircle,
                   color: "red",
+                  description: `${auditData.siteHealth.errors} errors, ${auditData.siteHealth.warnings} warnings, ${auditData.siteHealth.notices} notices`,
                 },
                 {
-                  label: "Passed Checks",
-                  value: auditData.summary.passes,
+                  label: "Health Score",
+                  value: `${auditData.siteHealth.score}`,
                   icon: CheckCircle,
                   color: "green",
+                  description: "Overall site health",
                 },
                 {
-                  label: "SEO Score",
-                  value: auditData.overallScore,
-                  icon: TrendingUp,
+                  label: "Scan Time",
+                  value: formatTime(auditData.scanTime),
+                  icon: Timer,
                   color: "purple",
+                  description: "Total audit duration",
                 },
               ].map((stat, i) => (
                 <motion.div
@@ -842,6 +713,9 @@ export default function QualifaiSEOAudit() {
                           <div className="text-sm text-gray-400">
                             {stat.label}
                           </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {stat.description}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -865,18 +739,18 @@ export default function QualifaiSEOAudit() {
                   Overview
                 </TabsTrigger>
                 <TabsTrigger
-                  value="technical"
-                  className="data-[state=active]:bg-gray-800"
-                >
-                  <Cpu className="h-4 w-4 mr-2" />
-                  Technical
-                </TabsTrigger>
-                <TabsTrigger
                   value="issues"
                   className="data-[state=active]:bg-gray-800"
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Issues
+                </TabsTrigger>
+                <TabsTrigger
+                  value="technical"
+                  className="data-[state=active]:bg-gray-800"
+                >
+                  <Cpu className="h-4 w-4 mr-2" />
+                  Technical
                 </TabsTrigger>
                 <TabsTrigger
                   value="ai"
@@ -886,23 +760,23 @@ export default function QualifaiSEOAudit() {
                   AI Insights
                 </TabsTrigger>
                 <TabsTrigger
-                  value="traffic"
+                  value="performance"
                   className="data-[state=active]:bg-gray-800"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Traffic
+                  <Gauge className="h-4 w-4 mr-2" />
+                  Performance
                 </TabsTrigger>
                 <TabsTrigger
-                  value="report"
+                  value="details"
                   className="data-[state=active]:bg-gray-800"
                 >
                   <FileText className="h-4 w-4 mr-2" />
-                  Full Report
+                  Details
                 </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
-              <TabsContent className="space-y-6">
+              <TabsContent defaultValue={"overview"} className="space-y-6">
                 <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
                   <CardHeader>
                     <CardTitle className="text-white">
@@ -913,15 +787,15 @@ export default function QualifaiSEOAudit() {
                     <div className="flex items-center justify-between">
                       <div className="text-center">
                         <div
-                          className={`text-6xl font-bold ${getScoreColor(auditData.overallScore)}`}
+                          className={`text-6xl font-bold ${getScoreColor(auditData.siteHealth.score)}`}
                         >
-                          {auditData.overallScore}
+                          {auditData.siteHealth.score}
                         </div>
                         <div className="text-gray-400 mt-2">out of 100</div>
                       </div>
                       <div className="w-2/3">
                         <Progress
-                          value={auditData.overallScore}
+                          value={auditData.siteHealth.score}
                           className="h-3"
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-2">
@@ -944,7 +818,7 @@ export default function QualifaiSEOAudit() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {Object.entries(auditData.categoryScores).map(
+                      {Object.entries(categoryScores).map(
                         ([category, score]) => (
                           <div
                             key={category}
@@ -963,7 +837,7 @@ export default function QualifaiSEOAudit() {
                                       : "bg-red-500"
                                 }
                               >
-                                {score}%
+                                {Math.round(score)}%
                               </Badge>
                             </div>
                             <Progress value={score} className="h-2" />
@@ -974,255 +848,393 @@ export default function QualifaiSEOAudit() {
                   </CardContent>
                 </Card>
 
-                {/* Charts */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="bg-gray-900 border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="text-white">
-                        Issues Distribution
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={Object.entries(auditData.categoryScores).map(
-                              ([name, value]) => ({
-                                name,
-                                value: 100 - value,
-                              }),
-                            )}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) =>
-                              `${name}: ${((percent || 0) * 100).toFixed(0)}%`
-                            }
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {COLORS.map((color, index) => (
-                              <Cell key={`cell-${index}`} fill={color} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
+                {/* Top Issues Chart */}
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">
+                      Top Issues Found
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={auditData.topIssues.slice(0, 10)}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis
+                          dataKey="title"
+                          stroke="#9ca3af"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                        />
+                        <YAxis stroke="#9ca3af" />
+                        <RechartsTooltip
+                          formatter={(value: number) => [
+                            `${value} issues`,
+                            "Count",
+                          ]}
+                          labelFormatter={(label) => `Issue: ${label}`}
+                        />
+                        <Bar
+                          dataKey="count"
+                          fill="#ef4444"
+                          radius={[8, 8, 0, 0]}
+                          name="Issue Count"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
 
-                  <Card className="bg-gray-900 border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="text-white">
-                        Score Comparison
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={Object.entries(auditData.categoryScores).map(
-                            ([name, score]) => ({ name, score }),
-                          )}
+                {/* Issue Distribution */}
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">
+                      Issue Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            {
+                              name: "Errors",
+                              value: auditData.siteHealth.errors,
+                              color: "#ef4444",
+                            },
+                            {
+                              name: "Warnings",
+                              value: auditData.siteHealth.warnings,
+                              color: "#f59e0b",
+                            },
+                            {
+                              name: "Notices",
+                              value: auditData.siteHealth.notices,
+                              color: "#3b82f6",
+                            },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name}: ${((percent || 0) * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
                         >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#374151"
-                          />
-                          <XAxis dataKey="name" stroke="#9ca3af" />
-                          <YAxis stroke="#9ca3af" domain={[0, 100]} />
-                          <RechartsTooltip />
-                          <Bar
-                            dataKey="score"
-                            fill="#3b82f6"
-                            radius={[8, 8, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
+                          <Cell key="cell-errors" fill="#ef4444" />
+                          <Cell key="cell-warnings" fill="#f59e0b" />
+                          <Cell key="cell-notices" fill="#3b82f6" />
+                        </Pie>
+                        <RechartsTooltip
+                          formatter={(value: number) => [
+                            `${value} issues`,
+                            "Count",
+                          ]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Issues Tab */}
+              <TabsContent defaultValue={"issues"} className="space-y-6">
+                {/* Errors */}
+                <Card className="bg-gradient-to-br from-red-900/20 to-red-950/20 border-red-800/50">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <AlertOctagon className="h-5 w-5 text-red-400" />
+                      Critical Errors ({auditData.siteHealth.errors})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {Object.entries(auditData.errors)
+                      .filter(([_, issue]) => issue.count > 0)
+                      .map(([key, issue]) => (
+                        <div
+                          key={key}
+                          className="bg-red-500/10 rounded-lg p-4 border border-red-500/30"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-white">
+                              {issue.type}
+                            </h4>
+                            <Badge variant="destructive">
+                              {issue.count} issues
+                            </Badge>
+                          </div>
+                          {issue.affectedPages.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              <p className="text-sm text-gray-300">
+                                Affected Pages:
+                              </p>
+                              <div className="max-h-32 overflow-y-auto bg-black/20 p-2 rounded">
+                                {issue.affectedPages
+                                  .slice(0, 5)
+                                  .map((page, idx) => (
+                                    <p
+                                      key={idx}
+                                      className="text-xs text-gray-400 truncate"
+                                    >
+                                      • {page.url}
+                                    </p>
+                                  ))}
+                                {issue.affectedPages.length > 5 && (
+                                  <p className="text-xs text-gray-500 italic">
+                                    ... and {issue.affectedPages.length - 5}{" "}
+                                    more
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+
+                {/* Warnings */}
+                <Card className="bg-gradient-to-br from-yellow-900/20 to-yellow-950/20 border-yellow-800/50">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                      Warnings ({auditData.siteHealth.warnings})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {Object.entries(auditData.warnings)
+                      .filter(([_, issue]) => issue.count > 0)
+                      .map(([key, issue]) => (
+                        <div
+                          key={key}
+                          className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-white">
+                              {issue.type}
+                            </h4>
+                            <Badge className="bg-yellow-500">
+                              {issue.count} issues
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+
+                {/* Notices */}
+                <Card className="bg-gradient-to-br from-blue-900/20 to-blue-950/20 border-blue-800/50">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-blue-400" />
+                      Notices ({auditData.siteHealth.notices})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {Object.entries(auditData.notices)
+                      .filter(([_, issue]) => issue.count > 0)
+                      .map(([key, issue]) => (
+                        <div
+                          key={key}
+                          className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-white">
+                              {issue.type}
+                            </h4>
+                            <Badge className="bg-blue-500">
+                              {issue.count} issues
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Technical Tab */}
-              <TabsContent className="space-y-6">
+              <TabsContent defaultValue={"technical"} className="space-y-6">
                 <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
                   <CardHeader>
                     <CardTitle className="text-white">
                       Technical Report
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Performance */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                          <Zap className="h-4 w-4" />
-                          Performance
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="text-sm text-gray-400 mb-1">
-                              Load Time
-                            </div>
-                            <div className="text-lg font-semibold text-white">
-                              {auditData.technicalReport?.performance?.loadTime
-                                ? `${(auditData.technicalReport.performance.loadTime / 1000).toFixed(2)}s`
-                                : "N/A"}
-                            </div>
+                  <CardContent className="space-y-6">
+                    {/* Performance */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Performance
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Load Time
                           </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="text-sm text-gray-400 mb-1">
-                              Page Size
-                            </div>
-                            <div className="text-lg font-semibold text-white">
-                              {auditData.technicalReport?.performance?.pageSize
-                                ? `${(auditData.technicalReport.performance.pageSize / 1024 / 1024).toFixed(2)} MB`
-                                : "N/A"}
-                            </div>
-                          </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="text-sm text-gray-400 mb-1">
-                              Requests
-                            </div>
-                            <div className="text-lg font-semibold text-white">
-                              {auditData.technicalReport?.performance
-                                ?.requests || "N/A"}
-                            </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.performance?.loadTime
+                              ? `${(auditData.technical.performance.loadTime / 1000).toFixed(2)}s`
+                              : "N/A"}
                           </div>
                         </div>
-                      </div>
-
-                      {/* Mobile */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                          <Smartphone className="h-4 w-4" />
-                          Mobile Optimization
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-400">
-                                Mobile Friendly
-                              </span>
-                              <Badge
-                                variant={
-                                  auditData.technicalReport?.mobile
-                                    ?.mobileFriendly
-                                    ? "default"
-                                    : "destructive"
-                                }
-                              >
-                                {auditData.technicalReport?.mobile
-                                  ?.mobileFriendly
-                                  ? "Yes"
-                                  : "No"}
-                              </Badge>
-                            </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Page Size
                           </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="text-sm text-gray-400 mb-1">
-                              Tap Targets
-                            </div>
-                            <div className="text-lg font-semibold text-white">
-                              {auditData.technicalReport?.mobile?.tapTargets ||
-                                0}
-                            </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.performance?.pageSize
+                              ? `${(auditData.technical.performance.pageSize / 1024 / 1024).toFixed(2)} MB`
+                              : "N/A"}
                           </div>
                         </div>
-                      </div>
-
-                      {/* Security */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Security
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-400">
-                                SSL Certificate
-                              </span>
-                              <Badge
-                                variant={
-                                  auditData.technicalReport?.security?.ssl
-                                    ?.valid
-                                    ? "default"
-                                    : "destructive"
-                                }
-                              >
-                                {auditData.technicalReport?.security?.ssl?.valid
-                                  ? "Valid"
-                                  : "Invalid"}
-                              </Badge>
-                            </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Requests
                           </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                            <div className="text-sm text-gray-400 mb-1">
-                              Security Score
-                            </div>
-                            <div className="text-lg font-semibold text-white">
-                              {auditData.technicalReport?.security
-                                ?.securityScore || 0}
-                              /100
-                            </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.performance?.requests ||
+                              "N/A"}
                           </div>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
-              {/* Issues Tab */}
-              <TabsContent className="space-y-6">
-                <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">All Issues</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                      {filteredChecks?.map((check) => (
-                        <div
-                          key={check.id}
-                          className={`p-4 rounded-lg border ${getStatusColor(check.status)}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-semibold text-white">
-                                {check.name}
-                              </h4>
-                              <p className="text-sm text-gray-300">
-                                {check.description}
-                              </p>
-                              {check.issue && (
-                                <p className="text-sm text-gray-300 mt-1">
-                                  ⚠️ {check.issue}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <Badge
-                                className={getImportanceColor(check.importance)}
-                              >
-                                {check.importance}
-                              </Badge>
-                              <div className="text-lg font-semibold text-white mt-1">
-                                {check.score}
-                              </div>
-                            </div>
+                    {/* Mobile */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        Mobile Optimization
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-400">
+                              Mobile Friendly
+                            </span>
+                            <Badge
+                              variant={
+                                auditData.technical?.mobile?.mobileFriendly
+                                  ? "default"
+                                  : "destructive"
+                              }
+                            >
+                              {auditData.technical?.mobile?.mobileFriendly
+                                ? "Yes"
+                                : "No"}
+                            </Badge>
                           </div>
                         </div>
-                      ))}
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Tap Targets
+                          </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.mobile?.tapTargets || 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Security
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-400">
+                              SSL Certificate
+                            </span>
+                            <Badge
+                              variant={
+                                auditData.technical?.security?.ssl?.valid
+                                  ? "default"
+                                  : "destructive"
+                              }
+                            >
+                              {auditData.technical?.security?.ssl?.valid
+                                ? "Valid"
+                                : "Invalid"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Security Score
+                          </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.security?.securityScore || 0}
+                            /100
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DNS */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <Network className="h-4 w-4" />
+                        DNS Analysis
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-400">
+                              CDN Detected
+                            </span>
+                            <Badge
+                              variant={
+                                auditData.technical?.dns?.cdnDetected?.length
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {auditData.technical?.dns?.cdnDetected?.length
+                                ? "Yes"
+                                : "No"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="text-sm text-gray-400 mb-1">
+                            A Records
+                          </div>
+                          <div className="text-lg font-semibold text-white">
+                            {auditData.technical?.dns?.aRecords?.length || 0}
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-400">
+                              DNSSEC
+                            </span>
+                            <Badge
+                              variant={
+                                auditData.technical?.dns?.hasDNSSEC
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {auditData.technical?.dns?.hasDNSSEC
+                                ? "Enabled"
+                                : "Disabled"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               {/* AI Insights Tab */}
-              <TabsContent className="space-y-6">
-                {auditData.aiInsights && (
+              <TabsContent defaultValue={"ai"} className="space-y-6">
+                {auditData.ai && (
                   <Card className="bg-gradient-to-br from-purple-900/20 to-purple-950/20 border-purple-800/50">
                     <CardHeader>
                       <CardTitle className="text-white">
@@ -1236,31 +1248,72 @@ export default function QualifaiSEOAudit() {
                           Top Recommendations
                         </h4>
                         <div className="space-y-3">
-                          {auditData.aiInsights.recommendations.map(
-                            (rec, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-start gap-3 p-4 bg-purple-900/20 rounded-lg border border-purple-800/30"
-                              >
-                                <div className="bg-purple-500/20 text-purple-300 text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center">
-                                  {idx + 1}
-                                </div>
-                                <span className="text-gray-300">{rec}</span>
+                          {auditData.ai.recommendations.map((rec, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-3 p-4 bg-purple-900/20 rounded-lg border border-purple-800/30"
+                            >
+                              <div className="bg-purple-500/20 text-purple-300 text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center">
+                                {idx + 1}
                               </div>
-                            ),
-                          )}
+                              <span className="text-gray-300">{rec}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
+                      {/* Priority Actions */}
+                      {auditData.ai.priorityActions &&
+                        auditData.ai.priorityActions.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-white mb-3">
+                              Priority Actions
+                            </h4>
+                            <div className="space-y-3">
+                              {auditData.ai.priorityActions.map(
+                                (action, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="bg-purple-900/10 rounded-lg p-4 border border-purple-800/30"
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-white font-medium">
+                                        {action.action}
+                                      </span>
+                                      <Badge
+                                        className={`
+                                    ${
+                                      action.impact === "high"
+                                        ? "bg-red-500"
+                                        : action.impact === "medium"
+                                          ? "bg-yellow-500"
+                                          : "bg-green-500"
+                                    }
+                                  `}
+                                      >
+                                        Priority: {action.priority}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex gap-4 text-sm text-gray-400">
+                                      <span>Impact: {action.impact}</span>
+                                      <span>Effort: {action.effort}</span>
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                       {/* Content Optimization */}
-                      {auditData.aiInsights.contentOptimization && (
+                      {auditData.ai.contentOptimization && (
                         <div>
                           <h4 className="font-semibold text-white mb-2">
                             Content Optimization
                           </h4>
                           <div className="p-4 bg-purple-900/10 rounded-lg border border-purple-800/30">
                             <p className="text-gray-300 leading-relaxed">
-                              {auditData.aiInsights.contentOptimization}
+                              {auditData.ai.contentOptimization}
                             </p>
                           </div>
                         </div>
@@ -1270,73 +1323,140 @@ export default function QualifaiSEOAudit() {
                 )}
               </TabsContent>
 
-              {/* Traffic Tab */}
-              <TabsContent className="space-y-6">
+              {/* Performance Tab */}
+              <TabsContent defaultValue={"performance"} className="space-y-6">
                 <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
                   <CardHeader>
                     <CardTitle className="text-white">
-                      Traffic Analysis
+                      Performance Metrics
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                        <div className="text-2xl font-bold text-white mb-1">
-                          {formatNumber(auditData.traffic.organic)}
+                    {auditData.summary && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <div className="text-2xl font-bold text-white mb-1">
+                              {auditData.summary.performance.loadTime}ms
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Load Time
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {auditData.summary.performance.loadTime < 1000
+                                ? "Excellent"
+                                : auditData.summary.performance.loadTime < 3000
+                                  ? "Good"
+                                  : "Needs Improvement"}
+                            </div>
+                          </div>
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <div className="text-2xl font-bold text-white mb-1">
+                              {formatNumber(
+                                auditData.summary.performance.pageSize,
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Page Size
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {auditData.summary.performance.requests} requests
+                            </div>
+                          </div>
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <div className="text-2xl font-bold text-white mb-1">
+                              {auditData.summary.security.securityScore}/100
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Security Score
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {auditData.summary.security.hasSSL
+                                ? "SSL: ✓"
+                                : "SSL: ✗"}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-400">
-                          Monthly Organic Traffic
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-white font-medium">
+                                Mobile Friendly
+                              </span>
+                              <Badge
+                                variant={
+                                  auditData.summary.mobile.friendly
+                                    ? "default"
+                                    : "destructive"
+                                }
+                              >
+                                {auditData.summary.mobile.friendly
+                                  ? "Yes"
+                                  : "No"}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              Viewport:{" "}
+                              {auditData.summary.mobile.hasViewport ? "✓" : "✗"}
+                            </p>
+                          </div>
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <div className="text-white font-medium mb-2">
+                              Total Issues
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-red-400">
+                                  {auditData.siteHealth.errors}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  Errors
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-yellow-400">
+                                  {auditData.siteHealth.warnings}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  Warnings
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-blue-400">
+                                  {auditData.siteHealth.notices}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  Notices
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                        <div className="text-2xl font-bold text-white mb-1">
-                          {formatNumber(auditData.traffic.keywords)}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          Ranking Keywords
-                        </div>
-                      </div>
-                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                        <div className="text-2xl font-bold text-white mb-1">
-                          {formatNumber(auditData.traffic.backlinks)}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          Total Backlinks
-                        </div>
-                      </div>
-                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                        <div className="text-2xl font-bold text-white mb-1">
-                          {formatNumber(auditData.traffic.domains)}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          Referring Domains
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* Full Report Tab */}
-              <TabsContent className="space-y-6">
+              {/* Details Tab */}
+              <TabsContent defaultValue={"overview"} className="space-y-6">
                 <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
                   <CardHeader>
-                    <CardTitle className="text-white">
-                      Complete Audit Report
-                    </CardTitle>
+                    <CardTitle className="text-white">Audit Details</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                        <h4 className="font-semibold text-white mb-2">
-                          Audit Summary
+                        <h4 className="font-semibold text-white mb-3">
+                          Scan Information
                         </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <div className="text-sm text-gray-400">
                               Audit ID
                             </div>
-                            <div className="text-white text-sm">
+                            <div className="text-white text-sm font-mono">
                               {auditData.auditId}
                             </div>
                           </div>
@@ -1352,15 +1472,63 @@ export default function QualifaiSEOAudit() {
                             <div className="text-sm text-gray-400">
                               Scan Type
                             </div>
-                            <div className="text-white">
-                              {auditData.crawlInfo?.scanType || "Single Page"}
+                            <div className="text-white capitalize">
+                              {auditData.scanType}
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm text-gray-400">Website</div>
+                            <div className="text-sm text-gray-400">
+                              Scan Duration
+                            </div>
+                            <div className="text-white">
+                              {formatTime(auditData.scanTime)}
+                            </div>
+                          </div>
+                          <div className="md:col-span-2">
+                            <div className="text-sm text-gray-400">
+                              Website URL
+                            </div>
                             <div className="text-white truncate">
                               {auditData.url}
                             </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                        <h4 className="font-semibold text-white mb-3">
+                          Crawl Statistics
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-white">
+                              {auditData.siteHealth.crawledPages}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Pages Scanned
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-red-400">
+                              {auditData.siteHealth.errors}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Critical Errors
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-400">
+                              {auditData.siteHealth.warnings}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              Warnings
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-400">
+                              {auditData.siteHealth.notices}
+                            </div>
+                            <div className="text-sm text-gray-400">Notices</div>
                           </div>
                         </div>
                       </div>
