@@ -4,6 +4,19 @@ interface AIProvider {
   name: string;
   analyze(prompt: string): Promise<string>;
 }
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 120_000, // 2 minutes
+) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, {
+    ...options,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(id));
+}
 
 class ClaudeProvider implements AIProvider {
   name = "GPT";
@@ -19,23 +32,24 @@ class ClaudeProvider implements AIProvider {
     }
 
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         "https://openrouter.ai/api/v1/chat/completions",
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${OPENROUTER_API_KEY}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://your-domain.com", // Required by OpenRouter
-            "X-Title": "SEO Audit Tool", // Optional but recommended
+            "HTTP-Referer": "https://your-domain.com",
+            "X-Title": "SEO Audit Tool",
           },
           body: JSON.stringify({
-            model: "openai/gpt-4", // Use a working model
+            model: "openai/gpt-4o-mini", // IMPORTANT (see below)
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.7,
-            max_tokens: 4000,
+            temperature: 0.6,
+            max_tokens: 3000,
           }),
         },
+        120_000, // 2 min
       );
 
       if (!response.ok) {

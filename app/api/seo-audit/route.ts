@@ -4,7 +4,7 @@ import { UltraSEOCrawler } from "./crawler";
 import { FileParser } from "./file-parser";
 import { getEnhancedAIInsights } from "./ai";
 import { MLAnalyzer } from "./ml-analyzer";
-import { ScreenshotService } from "./screenshot";
+import { ScreenshotCapture } from "./screenshot";
 import { ReportGenerator } from "./report-generator";
 import {
   analyzeCrawlability,
@@ -126,66 +126,27 @@ export async function POST(req: NextRequest) {
       dns: dnsAnalysis,
     };
 
-    // Capture screenshots using ScreenshotService if requested
+    // Capture screenshots if requested
     let screenshots: Record<string, string> = {};
     if (captureScreenshots) {
       console.log("📸 Capturing screenshots...");
-      const screenshotService = new ScreenshotService();
-      screenshots = await screenshotService.captureMultiple(
-        Array.from(crawler.getVisitedUrls()).slice(0, 5), // Limit to 5 URLs
+      const screenshotCapture = new ScreenshotCapture();
+      screenshots = await screenshotCapture.captureMultiple(
+        Array.from(crawler.getVisitedUrls()).slice(0, 10),
       );
-      console.log(`✅ Captured ${Object.keys(screenshots).length} screenshots`);
     }
 
     // Run ML Analysis if requested
     let mlResults: any = null;
     if (mlAnalysis) {
       console.log("🤖 Running ML analysis...");
-      try {
-        const mlAnalyzer = new MLAnalyzer();
-        mlResults = await mlAnalyzer.analyze(crawlResult);
-        console.log("✅ ML analysis completed");
-      } catch (mlError) {
-        console.error("❌ ML analysis failed, using fallback:", mlError);
-        // Provide fallback ML results
-        mlResults = {
-          status: "fallback",
-          ranking_prediction: { predicted_rank: 50, confidence: 0.5 },
-          content_quality_score: { overall_score: 50, grade: "C" },
-          traffic_forecast: {
-            predicted_increase: "10%",
-            timeframe: "3 months",
-          },
-        };
-      }
+      const mlAnalyzer = new MLAnalyzer();
+      mlResults = await mlAnalyzer.analyze(crawlResult);
     }
 
     // Get AI insights
-    let aiInsights: any = {};
-    try {
-      console.log("🧠 Generating AI insights...");
-      aiInsights = await getEnhancedAIInsights(mainUrl, crawlResult);
-      console.log("✅ AI insights generated");
-    } catch (aiError) {
-      console.error("❌ AI insights failed:", aiError);
-      aiInsights = {
-        recommendations: [
-          "Fix critical errors found in the audit",
-          "Improve page loading speed",
-          "Add missing alt text to images",
-          "Implement proper heading hierarchy",
-          "Add unique title tags to all pages",
-        ],
-        competitiveAnalysis: "Analysis unavailable due to AI service error.",
-        contentOptimization: "Content optimization suggestions unavailable.",
-        technicalImprovements: [
-          "Check technical SEO basics",
-          "Fix broken links",
-        ],
-        priorityActions: [],
-      };
-    }
-
+    console.log("🧠 Generating AI insights...");
+    const aiInsights = await getEnhancedAIInsights(mainUrl, crawlResult);
     crawlResult.aiInsights = aiInsights;
 
     const scanTime = Date.now() - startTime;
@@ -275,27 +236,15 @@ export async function POST(req: NextRequest) {
     // Generate PDF if requested
     if (generatePDF) {
       console.log("📄 Generating PDF report...");
-      try {
-        const reportGen = new ReportGenerator();
-        response.pdfReport = await reportGen.generatePDF(response);
-        console.log("✅ PDF report generated");
-      } catch (pdfError) {
-        console.error("❌ PDF generation failed:", pdfError);
-        response.pdfReport = null;
-      }
+      const reportGen = new ReportGenerator();
+      response.pdfReport = await reportGen.generatePDF(response);
     }
 
     // Generate CSV if requested
     if (generateCSV) {
       console.log("📊 Generating CSV export...");
-      try {
-        const reportGen = new ReportGenerator();
-        response.csvExport = await reportGen.generateCSV(response);
-        console.log("✅ CSV export generated");
-      } catch (csvError) {
-        console.error("❌ CSV generation failed:", csvError);
-        response.csvExport = null;
-      }
+      const reportGen = new ReportGenerator();
+      response.csvExport = await reportGen.generateCSV(response);
     }
 
     console.log(`✅ Audit completed in ${scanTime}ms`);
@@ -316,7 +265,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    name: "QualifAI SEO Audit API - 500+ Features",
+    name: "Ultra SEO Audit API - 500+ Features",
     version: "5.0.0",
     description: "World's most comprehensive SEO analysis platform",
 
@@ -470,10 +419,11 @@ export async function GET() {
           "Action items",
         ],
         Screenshots: [
-          "External API capture",
-          "SVG placeholders",
-          "Preview images",
-          "Quality thumbnails",
+          "Full page capture",
+          "Above fold",
+          "Mobile view",
+          "Issue highlighting",
+          "Visual comparison",
         ],
         "Custom Analysis": [
           "Custom selectors",
@@ -527,12 +477,6 @@ export async function GET() {
       "Issue Classification (SVM)",
       "Content Quality Scoring (Neural Network)",
       "Anomaly Detection (Isolation Forest)",
-    ],
-
-    screenshotServices: [
-      "ScreenshotAPI.net (External API)",
-      "SVG Placeholders (Fallback)",
-      "High-quality thumbnails",
     ],
 
     supportedFileFormats: ["CSV", "JSON", "TXT", "PDF"],
