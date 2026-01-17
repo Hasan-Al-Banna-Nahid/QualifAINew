@@ -23,7 +23,6 @@ const resolveMx = promisify(dns.resolveMx);
 const resolveCname = promisify(dns.resolveCname);
 const resolveNs = promisify(dns.resolveNs);
 
-// ============= Crawlability Analysis =============
 export async function analyzeCrawlability(
   url: string,
 ): Promise<CrawlabilityResult> {
@@ -66,7 +65,6 @@ export async function analyzeCrawlability(
   }
 }
 
-// ============= Mobile Analysis =============
 export async function analyzeMobile(
   url: string,
 ): Promise<MobileAnalysisResult> {
@@ -80,11 +78,9 @@ export async function analyzeMobile(
     });
 
     const $ = cheerio.load(response.data);
-
     const viewport = $('meta[name="viewport"]').attr("content") || "";
     const hasViewport = viewport.includes("width=device-width");
     const hasInitialScale = viewport.includes("initial-scale");
-
     const tapTargets = $(
       'a, button, input[type="button"], input[type="submit"]',
     ).length;
@@ -119,28 +115,23 @@ export async function analyzeMobile(
   }
 }
 
-// ============= International Analysis =============
 export async function analyzeInternational(
   url: string,
 ): Promise<InternationalAnalysisResult> {
   try {
     const response = await axios.get(url, { timeout: 10000 });
     const $ = cheerio.load(response.data);
-
     const hreflangTags = $('link[rel="alternate"][hreflang]');
     const hreflangs: Array<{ lang: string; href: string }> = [];
 
     hreflangTags.each((i, el) => {
       const lang = $(el).attr("hreflang") || "";
       const href = $(el).attr("href") || "";
-      if (lang && href) {
-        hreflangs.push({ lang, href });
-      }
+      if (lang && href) hreflangs.push({ lang, href });
     });
 
     const language = $("html").attr("lang") || "Not set";
     const canonical = $('link[rel="canonical"]').attr("href") || null;
-
     const hasSelfReference = hreflangs.some(
       (tag) => tag.lang === language && tag.href === url,
     );
@@ -171,12 +162,10 @@ export async function analyzeInternational(
   }
 }
 
-// ============= Performance Analysis =============
 export async function analyzePerformance(
   url: string,
 ): Promise<PerformanceAnalysisResult> {
   const startTime = Date.now();
-
   try {
     const response = await axios.get(url, {
       timeout: 15000,
@@ -207,25 +196,26 @@ export async function analyzePerformance(
     ).length;
     const renderBlockingJS = $("script[src]:not([async]):not([defer])").length;
 
+    // Simulate Core Web Vitals
+    const lcp = loadTime * 0.6 + Math.random() * 500;
+    const fid = Math.random() * 100 + 50;
+    const cls = Math.random() * 0.15;
+
     return {
       pageSize,
       loadTime,
       requests: totalRequests,
-      timeToFirstByte: loadTime * 0.3,
+      timeToFirstByte: loadTime * 0.25,
       contentType,
       encoding,
       renderBlockingCSS,
       renderBlockingJS,
       hasRenderBlocking: renderBlockingCSS > 0 || renderBlockingJS > 0,
       pageSpeedInsights: {
-        mobile: Math.floor(Math.random() * 40) + 60,
-        desktop: Math.floor(Math.random() * 40) + 70,
+        mobile: Math.max(0, Math.min(100, 100 - Math.floor(loadTime / 50))),
+        desktop: Math.max(0, Math.min(100, 100 - Math.floor(loadTime / 70))),
       },
-      coreWebVitals: {
-        lcp: Math.random() * 3000 + 1000,
-        fid: Math.random() * 300 + 50,
-        cls: Math.random() * 0.3,
-      },
+      coreWebVitals: { lcp, fid, cls },
       performanceScore:
         loadTime < 1000
           ? "Excellent"
@@ -235,7 +225,7 @@ export async function analyzePerformance(
               ? "Needs Improvement"
               : "Poor",
     };
-  } catch (error) {
+  } catch {
     return {
       pageSize: 0,
       loadTime: Date.now() - startTime,
@@ -253,7 +243,6 @@ export async function analyzePerformance(
   }
 }
 
-// ============= Security Analysis =============
 export async function analyzeSecurity(
   url: string,
 ): Promise<SecurityAnalysisResult> {
@@ -352,7 +341,6 @@ async function checkSSL(url: string): Promise<SSLInfo> {
       httpsAgent: new https.Agent({ rejectUnauthorized: true }),
       timeout: 5000,
     });
-
     return {
       valid: true,
       issuer: "Verified Certificate",
@@ -363,7 +351,7 @@ async function checkSSL(url: string): Promise<SSLInfo> {
       cipher: "Strong encryption",
       grade: "A",
     };
-  } catch (error) {
+  } catch {
     return {
       valid: false,
       issuer: "Unknown",
@@ -382,13 +370,13 @@ function checkVulnerabilities(html: string): string[] {
   $('script[src*="jquery"]').each((i, elem) => {
     const src = $(elem).attr("src") || "";
     if (src.includes("jquery-1.") || src.includes("jquery-2.")) {
-      vulnerabilities.push("Outdated jQuery version detected (security risk)");
+      vulnerabilities.push("Outdated jQuery version detected");
     }
   });
 
   const metaGenerator = $('meta[name="generator"]').attr("content");
   if (metaGenerator && metaGenerator.includes("WordPress")) {
-    vulnerabilities.push("WordPress version exposed in meta tags");
+    vulnerabilities.push("WordPress version exposed");
   }
 
   if (html.includes("/wp-admin/") || html.includes("/wp-includes/")) {
@@ -403,7 +391,6 @@ function calculateSecurityScore(
   ssl: SSLInfo,
 ): number {
   let score = 0;
-
   if (ssl.valid) score += 30;
   if (headers["strict-transport-security"]) {
     score += 15;
@@ -422,11 +409,9 @@ function calculateSecurityScore(
   )
     score += 5;
   if (headers["permissions-policy"]) score += 5;
-
   return Math.min(score, 100);
 }
 
-// ============= DNS Analysis =============
 export async function analyzeDNS(hostname: string): Promise<DNSAnalysisResult> {
   try {
     const [
@@ -463,7 +448,7 @@ export async function analyzeDNS(hostname: string): Promise<DNSAnalysisResult> {
         aRecords.status === "fulfilled" ? aRecords.value : [],
       ),
     };
-  } catch (error) {
+  } catch {
     return {
       aRecords: [],
       aaaaRecords: [],
@@ -496,7 +481,6 @@ function detectCDN(ipAddresses: string[]): string[] {
   ];
 
   const detectedCDNs = new Set<string>();
-
   for (const ip of ipAddresses) {
     for (const cdn of cdnPatterns) {
       if (cdn.patterns.some((pattern) => pattern.test(ip))) {
@@ -505,11 +489,9 @@ function detectCDN(ipAddresses: string[]): string[] {
       }
     }
   }
-
   return Array.from(detectedCDNs);
 }
 
-// ============= SEO Checks =============
 export async function runComprehensiveSEOChecks(
   url: string,
 ): Promise<SEOCheckResult[]> {
@@ -522,7 +504,6 @@ export async function runComprehensiveSEOChecks(
       },
     });
     const $ = cheerio.load(response.data);
-
     const results: SEOCheckResult[] = [];
 
     const headingStructureCheck: SEOCheck = {
@@ -535,11 +516,9 @@ export async function runComprehensiveSEOChecks(
         try {
           const headingElements = $("h1, h2, h3, h4, h5, h6");
           if (headingElements.length === 0) return "fail";
-
           let lastLevel = 0;
           let isValid = true;
           let headingCount = 0;
-
           headingElements.each((i, el) => {
             if (el.type === "tag") {
               const element = el as cheerio.TagElement;
@@ -551,7 +530,6 @@ export async function runComprehensiveSEOChecks(
               }
             }
           });
-
           return isValid && headingCount >= 3 ? "pass" : "fail";
         } catch {
           return "warning";
@@ -559,14 +537,9 @@ export async function runComprehensiveSEOChecks(
       })() as SEOCheckStatus,
     };
 
-    results.push({
-      category: "On-Page SEO",
-      checks: [headingStructureCheck],
-    });
-
+    results.push({ category: "On-Page SEO", checks: [headingStructureCheck] });
     return results;
-  } catch (err) {
-    console.error(err);
+  } catch {
     return [];
   }
 }

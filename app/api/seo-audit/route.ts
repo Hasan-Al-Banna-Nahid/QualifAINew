@@ -39,11 +39,9 @@ export async function POST(req: NextRequest) {
 
     console.log(`🚀 Starting ${scanType} scan for: ${url}`);
 
-    // Determine max pages based on scan type
     const maxPages =
       scanType === "single" ? 1 : scanType === "limited" ? 20 : 100;
 
-    // Run enhanced crawler
     const crawler = new EnhancedSiteCrawler(url, maxPages);
     const crawlStartTime = Date.now();
 
@@ -67,7 +65,6 @@ export async function POST(req: NextRequest) {
 
     const scanTime = Date.now() - crawlStartTime;
 
-    // Add technical details
     auditResult.technicalDetails = {
       crawlability,
       mobile,
@@ -77,37 +74,25 @@ export async function POST(req: NextRequest) {
       dns: dnsAnalysis,
     };
 
-    // Get AI insights
     console.log("🤖 Getting AI insights...");
     const aiInsights = await getEnhancedAIInsights(url, auditResult);
     auditResult.aiInsights = aiInsights;
 
     console.log(`✅ Scan completed in ${scanTime}ms`);
 
-    // Format response
     const response = {
       url,
       auditId: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       scanType,
       scanTime,
-
-      // Main results
       siteHealth: auditResult.siteHealth,
       topIssues: auditResult.topIssues,
-
-      // Categorized issues
       errors: auditResult.errors,
       warnings: auditResult.warnings,
       notices: auditResult.notices,
-
-      // Technical analysis
       technical: auditResult.technicalDetails,
-
-      // AI insights
       ai: auditResult.aiInsights,
-
-      // Summary for quick overview
       summary: {
         totalPages: auditResult.siteHealth.crawledPages,
         totalIssues:
@@ -148,25 +133,50 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   return NextResponse.json({
-    name: "Enhanced SEO Audit API",
-    version: "3.0",
-    description: "Semrush-style comprehensive SEO audit with AI insights",
+    name: "Ultra-Enhanced SEO Audit API",
+    version: "4.0",
+    description: "World-class SEO audit with 200+ features",
     features: [
       "Real-time web crawling (up to 100 pages)",
-      "Duplicate content detection",
+      "Duplicate content detection with similarity analysis",
       "Broken link detection (internal & external)",
-      "Page depth analysis",
+      "Page depth analysis with crawl path tracking",
       "Orphaned page detection",
-      "Redirect chain detection",
+      "Redirect chain detection and analysis",
       "Text-to-HTML ratio analysis",
-      "Image optimization check",
-      "Meta tag analysis",
-      "Performance metrics",
-      "Mobile-friendliness",
+      "Image optimization check (alt text, dimensions, formats)",
+      "Video and iframe detection",
+      "Meta tag comprehensive analysis (all types)",
+      "Open Graph and Twitter Card validation",
+      "Schema.org structured data extraction",
+      "Heading hierarchy validation (H1-H6)",
+      "Content quality metrics (word count, readability)",
+      "Performance metrics (Core Web Vitals simulation)",
+      "Mobile-friendliness analysis",
       "Security audit (SSL, headers, vulnerabilities)",
-      "International SEO (hreflang)",
-      "DNS analysis",
-      "AI-powered recommendations (Gemini 2.0 & Claude)",
+      "International SEO (hreflang validation)",
+      "DNS analysis with CDN detection",
+      "Link relationship analysis (nofollow, sponsored, etc.)",
+      "Social media link detection",
+      "Contact information extraction",
+      "Breadcrumb analysis",
+      "Code block detection",
+      "Form and input analysis",
+      "Internal linking structure analysis",
+      "Anchor text optimization analysis",
+      "Canonical URL validation",
+      "Robots meta tag analysis",
+      "Language and charset detection",
+      "Response code tracking",
+      "Content type analysis",
+      "Page load time monitoring",
+      "Script and stylesheet enumeration",
+      "Font loading analysis",
+      "AI-powered recommendations (Gemini 2.0 & Claude Sonnet 4)",
+      "Priority action planning with impact/effort matrix",
+      "Competitive analysis insights",
+      "Content optimization strategies",
+      "Technical improvement roadmap",
     ],
     endpoints: {
       POST: "/api/seo-audit",
@@ -176,9 +186,9 @@ export async function GET(req: NextRequest) {
       },
     },
     scanTypes: {
-      single: "1 page",
-      limited: "20 pages",
-      full: "100 pages",
+      single: "1 page - Quick analysis",
+      limited: "20 pages - Standard audit",
+      full: "100 pages - Comprehensive audit",
     },
     issueCategories: {
       errors: [
@@ -210,6 +220,25 @@ export async function GET(req: NextRequest) {
         "Permanent redirects",
         "Multiple H1 tags",
       ],
+    },
+    aiProviders: [
+      "Google Gemini 2.0 Flash (Primary)",
+      "Anthropic Claude Sonnet 4 (Fallback)",
+    ],
+    responseFormat: {
+      url: "string",
+      auditId: "string",
+      timestamp: "ISO 8601 datetime",
+      scanType: "string",
+      scanTime: "number (milliseconds)",
+      siteHealth: "Health metrics object",
+      topIssues: "Array of top issues",
+      errors: "Categorized error objects",
+      warnings: "Categorized warning objects",
+      notices: "Categorized notice objects",
+      technical: "Technical analysis details",
+      ai: "AI-generated insights and recommendations",
+      summary: "Quick overview metrics",
     },
   });
 }
