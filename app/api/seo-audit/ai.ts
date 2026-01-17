@@ -47,7 +47,7 @@ class ClaudeProvider implements AIProvider {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3-5-sonnet-20241022",
+          model: "anthropic/claude-3-5-sonnet",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7,
           max_tokens: 4000,
